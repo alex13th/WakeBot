@@ -1,6 +1,7 @@
-# Wakeboard telegram bot
+# Wakeboard Telegram-bot
 
 This is a Python project that was created for the study aim. We are trying to release Telegram bot that provides wakeboard station customers to get booking themself. The project is planned to realize webhook based on Flask.
+[Вступление на русском языке](INTRODUCTION_RUS.md)
 
 ## Getting Started
 
@@ -14,6 +15,7 @@ Please read [Russian language version DEVELOPMENT_RUS.md](DEVELOPMENT_RUS.md);
 
 * [Python 3](https://www.python.org/): we recommend using 3.6 version;
 * [Flask](https://flask.palletsprojects.com/).
+* [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/).
 
 ### Installing
 
@@ -33,6 +35,7 @@ No deployment instructions availabele now.
 ## Built With
 
 * [Flask](https://flask.palletsprojects.com/) - The web framework used
+* [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/) - telegram-bot framework used.
 
 ## Authors
 
