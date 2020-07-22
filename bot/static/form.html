@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=<device-width>, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function sendAnswers() {
+            const xhr = new XMLHttpRequest();
+            // const resultData = {'userInfo': userInfo, 'answers': answers};
+            const resultJSON = document.getElementById("requestText").value;
+            // '{"update_id":354675889,"message":{"message_id":1842,"from":{"id":586350636,"is_bot":false,"first_name":"Alexey","last_name":"Sukharev","language_code":"en"},"chat":{"id":586350636,"first_name":"Alexey","last_name":"Sukharev","type":"private"},"date":1595136928,"reply_to_message":{"message_id":1841,"from":{"id":1273795086,"is_bot":true,"first_name":"DevWakeBot","username":"DevWakeBot"},"chat":{"id":586350636,"first_name":"Alexey","last_name":"Sukharev","type":"private"},"date":1595136924,"text":"Message","entities":[{"offset":0,"length":47,"type":"bold"}]},"contact":{"phone_number":"+79149523870","first_name":"Alexey","last_name":"Sukharev","user_id":586350636}}}';
+
+            xhr.open("POST", "/bot", true)
+            xhr.responseType = 'json';
+            xhr.onload = function() {
+                if (this.status == 200) {
+                    document.getElementById("resultText").value = JSON.stringify(this.response);
+                } else {
+                    var error = new Error(this.statusText);
+                    error.code = this.status;
+                }
+            };
+
+            xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+            
+            xhr.send(resultJSON);
+        }
+
+    </script>
+        <textarea rows="10" cols="80" id="requestText"></textarea>
+        <button onclick="sendAnswers()">Отправить</button>
+        <textarea rows="10" cols="80" id="resultText"></textarea>
+
+</body>
+</html>

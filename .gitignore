@@ -1,0 +1,3 @@
+*.sock
+*.ini
+__pycache__
