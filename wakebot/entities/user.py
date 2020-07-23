@@ -5,6 +5,11 @@ class User:
     Класс модели пользователя
     """
 
+    def __init__(self, 
+                 firstname, lastname=None, middlename=None, displayname=None,
+                 phone_number=None, telegram_id=None, user_id=None):
+        pass
+
     @property
     def user_id(self):
         """ Идентификатор пользователя """
@@ -16,30 +21,30 @@ class User:
         pass
 
     @property
-    def first_name(self):
+    def firstname(self):
         """ Имя """
         pass
 
     @property
-    def last_name(self):
+    def lastname(self):
         """ Фамилия """
         pass
 
     @property
-    def middle_name(self):
+    def middlename(self):
         """ Отчество """
         pass
 
     @property
-    def display_name(self):
+    def displayname(self):
         """ Отображаемое имя """
         pass
 
     @property
-    def phone_namber(self):
+    def phone_number(self):
         """ Номер телефона """
         pass
 
     def __str__(self):
         """ Строковое представление """
-        pass
+        return ""
