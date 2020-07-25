@@ -20,6 +20,11 @@ class ChatProvider:
         """ Объект состояния чата с пользователем """
         pass
 
+    @property
+    def processor(self):
+        """ Объект состояния чата с пользователем """
+        pass
+
     def proceed_text(self, message):
         """ Метод обработки поступающих текстовых сообщений """
         pass
