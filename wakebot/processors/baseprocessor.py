@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from aiogram.dispatcher import Dispatcher
+
 
 class BaseProcessor:
     """ Базовый класс обработки сообщений
     """
 
-    def __init__(self, provider, state):
+    def __init__(self, dispatcher: Dispatcher, state):
         """
             provider: объект основного процессора бота;
             state: объект состояния чата.

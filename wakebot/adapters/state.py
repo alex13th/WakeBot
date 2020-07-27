@@ -18,7 +18,7 @@ class StateManager:
     """
 
     def __init__(self, data_adapter: BaseDataAdapter,
-                 chat_id, user_id, message_id=None):
+                 chat_id=None, user_id=None, message_id=None):
         """Initialize StateManager object
 
         Args:
@@ -31,14 +31,11 @@ class StateManager:
                 Optinal. An int or str a telegramm message Id
         """
         self.__data_adapter = data_adapter
-        self.__chat_id = chat_id
-        self.__user_id = user_id
-        self.__message_id = message_id
         self.__state_type = ""
         self.__state = ""
         self.__data = None
 
-        self.get_state()
+        self.get_state(chat_id, user_id, message_id)
 
     @property
     def data_adapter(self):
@@ -60,12 +57,18 @@ class StateManager:
     def state(self):
         return self.__state
 
-    def get_state(self):
+    def get_state(self, chat_id, user_id, message_id=None):
         """Get current state from data adapter """
-        state_data = self.__data_adapter.get_data_by_keys(key=self.state_id)
-        if state_data:
-            self.__state_type = state_data["state_type"]
-            self.__state = state_data["state"]
+        self.__chat_id = chat_id
+        self.__user_id = user_id
+        self.__message_id = message_id
+
+        if chat_id and user_id:
+            state_data = self.__data_adapter.get_data_by_keys(
+                key=self.state_id)
+            if state_data:
+                self.__state_type = state_data["state_type"]
+                self.__state = state_data["state"]
 
     def set_state(self, state=None, state_type=None,
                   message_id=None, data=None):
@@ -97,4 +100,42 @@ class StateManager:
 
     def finish(self):
         """Remove current state"""
+        pass
+
+
+class StateProvider:
+
+    def __init__(self, data_adapter: BaseDataAdapter):
+        self.__data_adapter = data_adapter
+        self.__state_manager = StateManager(data_adapter)
+        self.__message_handlers = []
+        self.__callback_handlers = []
+
+    def command_state(self, state_type="*", state="*"):
+        def decorator(callback):
+            async def command_function(message):
+                if state_type == "*" and state == "*":
+                    await callback(message, self.__state_manager)
+                    return
+
+                chat_id = message.chat.id
+                user_id = message.from_user.id
+                message_id = message.message_id
+
+                self.__state_manager.get_state(chat_id, user_id, message_id)
+                current_state_type = self.__state_manager.state_type
+                current_state = self.__state_manager.state
+
+                if state_type == current_state_type and state == current_state:
+                    await callback(message, self.__state_manager)
+                elif state_type == "*" and state == current_state:
+                    await callback(message, self.__state_manager)
+                elif state_type == current_state_type and state == "*":
+                    await callback(message, self.__state_manager)
+
+            return command_function
+
+        return decorator
+
+    def callback_query_state(self, callback_query):
         pass
