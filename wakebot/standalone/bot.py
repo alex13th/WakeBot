@@ -16,7 +16,7 @@ sp = StateProvider(ma)
 
 
 @dp.message_handler(commands=["wake"])
-@sp.command_state("")
+@sp.message_state("")
 async def cmd_wake(message, state_manager=None):
     state_manager.set_state(state_type="wake",
                             message_id=message.message_id)
@@ -24,7 +24,7 @@ async def cmd_wake(message, state_manager=None):
 
 
 @dp.message_handler(commands=["start"])
-@sp.command_state(state_type="wake")
+@sp.message_state(state_type="wake")
 async def cmd_start(message, state_manager=None):
     await message.answer("WAKE START")
 

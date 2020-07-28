@@ -3,7 +3,7 @@
 class Dispatcher:
     """ Имитатор объекта телеграм бота """
 
-    def register_message_handler(self, callback):
+    def register_message_handler(self, callback, commands=None):
         pass
 
     def register_callback_query_handler(self, callback):

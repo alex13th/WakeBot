@@ -1,5 +1,5 @@
-
 # -*- coding: utf-8 -*-
+
 from wakebot.adapters.data import BaseDataAdapter
 
 
@@ -100,42 +100,159 @@ class StateManager:
 
     def finish(self):
         """Remove current state"""
-        pass
+        raise NotImplementedError
 
 
 class StateProvider:
+    """Provide state filter
 
-    def __init__(self, data_adapter: BaseDataAdapter):
+    Attributes:
+        data_adapter:
+            A data adapter of a state storage
+    """
+    def __init__(self, data_adapter=None):
+        """Initialize StateProvider object
+
+        Args:
+            data_adapter:
+                Optional. A data adapter object of a state storage
+        """
         self.__data_adapter = data_adapter
         self.__state_manager = StateManager(data_adapter)
-        self.__message_handlers = []
-        self.__callback_handlers = []
 
-    def command_state(self, state_type="*", state="*"):
-        def decorator(callback):
-            async def command_function(message):
-                if state_type == "*" and state == "*":
-                    await callback(message, self.__state_manager)
-                    return
+    @property
+    def data_adapter(self):
+        return self.__data_adapter
 
-                chat_id = message.chat.id
-                user_id = message.from_user.id
-                message_id = message.message_id
+    @data_adapter.setter
+    def data_adapter(self, value):
+        self.__data_adapter = value
+        self.__state_manager = StateManager(value)
 
-                self.__state_manager.get_state(chat_id, user_id, message_id)
-                current_state_type = self.__state_manager.state_type
-                current_state = self.__state_manager.state
+    def message_state(self, state_type="*", state="*"):
+        """Decorator state type and(or) state filter for message function
 
-                if state_type == current_state_type and state == current_state:
-                    await callback(message, self.__state_manager)
-                elif state_type == "*" and state == current_state:
-                    await callback(message, self.__state_manager)
-                elif state_type == current_state_type and state == "*":
-                    await callback(message, self.__state_manager)
+            Args:
+                state_type:
+                    Optional. A string state type filter:
+                        "*" - any state type
+                        "" - state type has no value filter
+                state:
+                    Optional. A string state filter:
+                        "*" - any state
+                        "" - state has no value filter
+        """
+        def decorator(top_cls, message_handler=None):
+            if not message_handler:
+                message_handler = top_cls
 
-            return command_function
+            async def message_decorator(cls, message=None):
+                if message:
+                    self.update_state_manager(message)
+                    if state_type == "*" and state == "*":
+                        await message_handler(cls, message,
+                                              self.__state_manager)
+                        return
 
+                    if self.check_filter(state_type, state, message):
+                        await message_handler(cls, message,
+                                              self.__state_manager)
+                else:
+                    message = cls
+                    self.update_state_manager(message)
+                    if state_type == "*" and state == "*":
+                        await message_handler(message, self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await message_handler(message, self.__state_manager)
+
+            return message_decorator
         return decorator
 
-    def callback_query_state(self, callback_query):
-        pass
+    def callback_query_state(self, state_type="*", state="*"):
+        """Set state type and(or) state filter for callback_query function
+
+            Args:
+                state_type:
+                    Optional. A string state type filter:
+                        "*" - any state type
+                        "" - state type has no value filter
+                state:
+                    Optional. A string state filter:
+                        "*" - any state
+                        "" - state has no value filter
+        """
+        def decorator(top_cls, callback_query_handler=None):
+            if not callback_query_handler:
+                callback_query_handler = top_cls
+
+            async def callback_query_decorator(cls, callback_query=None):
+                if callback_query_handler:
+                    message = callback_query.message
+
+                    self.update_state_manager(message)
+
+                    if state_type == "*" and state == "*":
+                        await callback_query_handler(cls, callback_query,
+                                                     self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await callback_query_handler(cls, message,
+                                                     self.__state_manager)
+                else:
+                    callback_query = cls
+                    message = callback_query.message
+
+                    self.update_state_manager(message)
+
+                    if state_type == "*" and state == "*":
+                        await callback_query_handler(cls, callback_query,
+                                                     self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await callback_query_handler(cls, message,
+                                                     self.__state_manager)
+
+            return callback_query_decorator
+        return decorator
+
+    def check_filter(self, state_type, state, message):
+        """Check message is matched filter
+
+            Args:
+                state_type:
+                    A string state type filter:
+                        "*" - any state type
+                        "" - state type has no value filter
+                state:
+                    A string state filter:
+                        "*" - any state
+                        "" - state has no value filter
+                message:
+                    A message to check matching
+        """
+        current_state_type = self.__state_manager.state_type
+        current_state = self.__state_manager.state
+
+        result = (state_type == current_state_type
+                  and state == current_state)
+        result = (result or
+                  (state_type == "*" and state == current_state))
+        result = (result or
+                  (state_type == current_state_type and state == "*"))
+
+        return result
+
+    def update_state_manager(self, message):
+        """Update state manager
+            Args:
+                state_type:
+                    A message object to get state
+        """
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        message_id = message.message_id
+        self.__state_manager.get_state(chat_id, user_id, message_id)
