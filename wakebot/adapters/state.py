@@ -199,7 +199,7 @@ class StateProvider:
                         return
 
                     if self.check_filter(state_type, state, message):
-                        await callback_query_handler(cls, message,
+                        await callback_query_handler(cls, callback_query,
                                                      self.__state_manager)
                 else:
                     callback_query = cls
@@ -213,7 +213,7 @@ class StateProvider:
                         return
 
                     if self.check_filter(state_type, state, message):
-                        await callback_query_handler(cls, message,
+                        await callback_query_handler(cls, callback_query,
                                                      self.__state_manager)
 
             return callback_query_decorator

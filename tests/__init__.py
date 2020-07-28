@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import traceback
 
 
 class BaseTestCase():
@@ -39,7 +40,14 @@ class BaseTestCase():
                        if test.startswith("test_")
                        and callable(getattr(self, test))]
 
+        header = (f"\n{'*'*5} {self.BOLD}Starting tests:{self.ENDC} "
+                  f"{self.__doc__} {'*'*5}\n")
+        footer = (f"\n{'*'*5} {self.BOLD}End tests:{self.ENDC} "
+                  f"{self.__doc__} {'*'*5}\n")
+
+        print(header)
         fail_count = 0
+
         for test in method_list:
             self.setUp()
             test_name = test.__doc__ if test.__doc__ else test.__name__
@@ -50,8 +58,10 @@ class BaseTestCase():
             except AssertionError as assert_error:
                 self.print_failure(test_name, assert_error)
                 fail_count += 1
-            except Exception as error:
-                self.print_error(test_name, error)
+            except Exception:
+                self.print_error(test_name, "\n".join(
+                                 traceback.format_exc().splitlines()))
                 fail_count += 1
 
         print(f"\nRan {len(method_list)} test (failure = {fail_count}) ")
+        print(footer)

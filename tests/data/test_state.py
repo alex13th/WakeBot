@@ -77,7 +77,7 @@ class StateProviderTestCase(BaseTestCase):
 
     @state_provider.message_state(state_type="reserve", state="main")
     async def message_reserve_main(self, message, state_manager):
-        self.result_text = (f"Message: {state_manager.state_type}" +
+        self.result_text = (f"{message.text}: {state_manager.state_type}" +
                             f" {state_manager.state}")
 
     @state_provider.callback_query_state(state_type="reserve", state="book")
@@ -117,10 +117,11 @@ class StateProviderTestCase(BaseTestCase):
         test_message.chat = self.chat
         test_message.from_user = self.user
         test_message.message_id = 121
+        test_message.text = "Message-121"
 
         await self.message_reserve_main(test_message)
 
-        self.assertEqual(self.result_text, "Message: reserve main")
+        self.assertEqual(self.result_text, "Message-121: reserve main")
 
     async def test_callback_query_reserve_book(self):
         """Reserve state main message"""
