@@ -11,6 +11,7 @@ class DefaultProcessorTestCase(BaseTestCase):
     def setUp(self):
         dp = Dispatcher()
         self.processor = DefaultProcessor(dp, RuGeneral)
+        self.strings = RuGeneral.default
 
     async def answer_mock(self, text, parse_mode=None):
         self.result_text = text
@@ -19,23 +20,24 @@ class DefaultProcessorTestCase(BaseTestCase):
         """Proceed /start command"""
 
         message = Message()
-        message.text = "/start"
         message.answer = self.answer_mock
 
         await self.processor.cmd_start(message)
-
-        self.assertEqual(self.result_text, RuGeneral.default.start_message)
+        passed, message = self.assert_params(self.result_text,
+                                             self.strings.start_message)
+        assert passed, message
 
     async def test_cmd_help(self):
         """Proceed /help command"""
 
         message = Message()
-        message.text = "/help"
         message.answer = self.answer_mock
 
         await self.processor.cmd_help(message)
 
-        self.assertEqual(self.result_text, RuGeneral.default.help_message)
+        await self.processor.cmd_start(message)
+        passed, message = self.assert_params(self.result_text,
+                                             self.strings.help_message)
 
 
 DefaultProcessorTestCase().run_tests_async()

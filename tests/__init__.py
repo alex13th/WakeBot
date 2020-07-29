@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import sys
 import traceback
 
 
@@ -13,9 +14,9 @@ class BaseTestCase():
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-    def assertEqual(self, value, expected_value):
+    def assert_params(self, value, expected_value):
         passed = value and value == expected_value
-        assert passed, self.get_failure_text(value, expected_value)
+        return (passed, self.get_failure_text(value, expected_value))
 
     def setUp(self):
         raise NotImplementedError
@@ -29,11 +30,13 @@ class BaseTestCase():
 
     def print_error(self, test_name, error):
         print(f"{test_name}: {self.FAIL}ERROR{self.ENDC}\n"
-              + " " * 4 + f"{self.BOLD}{error}{self.ENDC}")
+              f"{self.BOLD}{error}{self.ENDC}")
 
     def get_failure_text(self, result_value, expected_value):
-        return (f"{self.BOLD}Expected:{self.ENDC} '{result_value}'"
-                f" {self.BOLD}equal{self.ENDC} '{expected_value}'")
+        return (" " * 4 + f"{self.BOLD}Expected:{self.ENDC}\n"
+                + f"'{result_value}'\n"
+                + " " * 4 + f" {self.BOLD}Equal to:{self.ENDC}\n'"
+                + f"{expected_value}'")
 
     def run_tests_async(self):
         method_list = [getattr(self, test) for test in dir(self)
@@ -56,7 +59,13 @@ class BaseTestCase():
                 asyncio.run(test())
                 self.print_success(test_name)
             except AssertionError as assert_error:
-                self.print_failure(test_name, assert_error)
+                _, _, tb = sys.exc_info()
+                tb_info = traceback.extract_tb(tb)
+                filename, line, func, text = tb_info[-1]
+
+                self.print_failure(test_name, (f"{assert_error}\n"
+                                               + f"(line: {line},"
+                                               + f"file name: {filename})\n"))
                 fail_count += 1
             except Exception:
                 self.print_error(test_name, "\n".join(
