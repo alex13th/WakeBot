@@ -15,6 +15,8 @@ class ReserveProcessor(StatedProcessor):
     Attributes:
         strings:
             A locale strings class
+        state_manager:
+            A state manager class instance
     """
 
     def __init__(self,
@@ -42,42 +44,13 @@ class ReserveProcessor(StatedProcessor):
         super().__init__(dispatcher, state_manager, state_type, parse_mode)
         self.strings = strings
 
-        dispatcher.register_callback_query_handler(self.callback_query_main,
-                                                   self._filter_main)
-        dispatcher.register_callback_query_handler(self.callback_query_book,
-                                                   self._filter_book)
-        dispatcher.register_callback_query_handler(self.callback_query_date,
-                                                   self._filter_date)
-        dispatcher.register_callback_query_handler(self.callback_query_hour,
-                                                   self._filter_hour)
-        dispatcher.register_callback_query_handler(self.callback_query_minute,
-                                                   self._filter_minute)
-        dispatcher.register_callback_query_handler(self.callback_query_list,
-                                                   self._filter_list)
-
-    def _filter_main(self, callback_query):
-        return self.check_filter(callback_query, state_type=self.state_type,
-                                 state="main")
-
-    def _filter_book(self, callback_query):
-        return self.check_filter(callback_query, state_type=self.state_type,
-                                 state="book")
-
-    def _filter_list(self, callback_query):
-        return self.check_filter(callback_query, state_type=self.state_type,
-                                 state="list")
-
-    def _filter_date(self, callback_query):
-        return self.check_filter(callback_query, state_type=self.state_type,
-                                 state="date")
-
-    def _filter_hour(self, callback_query):
-        return self.check_filter(callback_query, state_type=self.state_type,
-                                 state="hour")
-
-    def _filter_minute(self, callback_query):
-        return self.check_filter(callback_query, state_type=self.state_type,
-                                 state="minute")
+        self.register_callback_query_handler(self.callback_query_main, "main")
+        self.register_callback_query_handler(self.callback_query_list, "list")
+        self.register_callback_query_handler(self.callback_query_book, "book")
+        self.register_callback_query_handler(self.callback_query_date, "date")
+        self.register_callback_query_handler(self.callback_query_hour, "hour")
+        self.register_callback_query_handler(self.callback_query_minute,
+                                             "minute")
 
     async def callback_query_main(self, callback_query: CallbackQuery):
         """Proceed Main menu buttons"""
@@ -87,15 +60,16 @@ class ReserveProcessor(StatedProcessor):
         state_manager = self.state_manager
 
         if callback_query.data == "book":
-            text, reply_markup, state = self.create_book_message()
+            text, reply_markup, state, answer = self.create_book_message()
 
         elif callback_query.data == "list":
-            text, reply_markup, state = self.create_list_message()
+            text, reply_markup, state, answer = self.create_list_message()
 
-        state_manager.set_state(state=state)
         await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
 
     async def callback_query_book(self, callback_query: CallbackQuery):
         """Proceed Book menu buttons"""
@@ -105,18 +79,19 @@ class ReserveProcessor(StatedProcessor):
         state_manager = self.state_manager
 
         if callback_query.data == "back":
-            text, reply_markup, state = self.create_main_message()
+            text, reply_markup, state, answer = self.create_main_message()
 
         if callback_query.data == "date":
-            text, reply_markup, state = self.create_date_message()
+            text, reply_markup, state, answer = self.create_date_message()
 
         if callback_query.data == "time":
-            text, reply_markup, state = self.create_hour_message()
+            text, reply_markup, state, answer = self.create_hour_message()
 
-        state_manager.set_state(state)
-        await callback_query.message.edit_text(text=text,
+        await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
 
     async def callback_query_date(self, callback_query: CallbackQuery):
         """Proceed Date menu buttons"""
@@ -126,14 +101,15 @@ class ReserveProcessor(StatedProcessor):
         state_manager = self.state_manager
 
         if callback_query.data == "back":
-            text, reply_markup, state = self.create_book_message()
+            text, reply_markup, state, answer = self.create_book_message()
         else:
-            text, reply_markup, state = self.create_book_message()
+            text, reply_markup, state, answer = self.create_book_message()
 
-        state_manager.set_state(state=state)
-        await callback_query.message.edit_text(text=text,
+        await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
 
     async def callback_query_hour(self, callback_query: CallbackQuery):
         """Proceed Hour menu buttons"""
@@ -143,14 +119,15 @@ class ReserveProcessor(StatedProcessor):
         state_manager = self.state_manager
 
         if callback_query.data == "back":
-            text, reply_markup, state = self.create_book_message()
+            text, reply_markup, state, answer = self.create_book_message()
         else:
-            text, reply_markup, state = self.create_minute_message()
+            text, reply_markup, state, answer = self.create_minute_message()
 
-        state_manager.set_state(state)
-        await callback_query.message.edit_text(text=text,
+        await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
 
     async def callback_query_minute(self, callback_query: CallbackQuery):
         """Proceed Minute menu buttons"""
@@ -160,14 +137,15 @@ class ReserveProcessor(StatedProcessor):
         state_manager = self.state_manager
 
         if callback_query.data == "back":
-            text, reply_markup, state = self.create_hour_message()
+            text, reply_markup, state, answer = self.create_hour_message()
         else:
-            text, reply_markup, state = self.create_book_message()
+            text, reply_markup, state, answer = self.create_book_message()
 
-        state_manager.set_state(state)
-        await callback_query.message.edit_text(text=text,
+        await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
 
     async def callback_query_list(self, callback_query: CallbackQuery):
         """Proceed Main menu buttons"""
@@ -177,60 +155,67 @@ class ReserveProcessor(StatedProcessor):
         state_manager = self.state_manager
 
         if callback_query.data == "back":
-            text, reply_markup, state = self.create_main_message()
+            text, reply_markup, state, answer = self.create_main_message()
 
         elif callback_query.data == "book":
-            text, reply_markup, state = self.create_book_message()
+            text, reply_markup, state, answer = self.create_book_message()
 
         elif callback_query.data == "list":
-            text, reply_markup, state = self.create_list_message()
+            text, reply_markup, state, answer = self.create_list_message()
 
-        state_manager.set_state(state=state)
         await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
 
     def create_main_message(self):
         text = self.create_main_text()
         reply_markup = self.create_main_keyboard()
         state = "main"
+        answer = text
 
-        return (text, reply_markup, state)
+        return (text, reply_markup, state, answer)
 
     def create_book_message(self):
         text = self.create_book_text()
         reply_markup = self.create_book_keyboard()
         state = "book"
+        answer = text
 
-        return (text, reply_markup, state)
+        return (text, reply_markup, state, answer)
 
     def create_list_message(self):
         text = self.create_list_text()
         reply_markup = self.create_list_keyboard()
         state = "list"
+        answer = text
 
-        return (text, reply_markup, state)
+        return (text, reply_markup, state, answer)
 
     def create_date_message(self):
         text = self.create_book_text()
         reply_markup = self.create_date_keyboard()
         state = "date"
+        answer = text
 
-        return (text, reply_markup, state)
+        return (text, reply_markup, state, answer)
 
     def create_hour_message(self):
         text = self.create_book_text()
         reply_markup = self.create_hour_keyboard()
         state = "hour"
+        answer = text
 
-        return (text, reply_markup, state)
+        return (text, reply_markup, state, answer)
 
     def create_minute_message(self):
         text = self.create_book_text()
         reply_markup = self.create_minute_keyboard()
         state = "minute"
+        answer = text
 
-        return (text, reply_markup, state)
+        return (text, reply_markup, state, answer)
 
     def create_main_text(self):
         return "Hello message!"

@@ -38,6 +38,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         self.test_message = message
 
         callback = CallbackQuery()
+        callback.answer = self.callback_answer_mock
         callback.message = message
         self.test_callback_query = callback
 
@@ -45,6 +46,9 @@ class ReserveProcessorTestCase(BaseTestCase):
         self.message = Message()
         self.message.text = text
         self.message.reply_markup = reply_markup
+
+    async def callback_answer_mock(self, text):
+        self.callback_answer_text = text
 
     async def edit_text_mock(self, text, parse_mode=None, reply_markup=None):
         await self.answer_mock(text, parse_mode, reply_markup)
@@ -342,4 +346,5 @@ class ReserveProcessorTestCase(BaseTestCase):
         assert passed, alert
 
 
-ReserveProcessorTestCase().run_tests_async()
+if __name__ == "__main__":
+    ReserveProcessorTestCase().run_tests_async()

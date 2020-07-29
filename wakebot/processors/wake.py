@@ -13,6 +13,8 @@ class WakeProcessor(ReserveProcessor):
     Attributes:
         strings:
             A locale strings class
+        state_manager:
+            A state manager class instance
     """
 
     def __init__(self,
@@ -44,7 +46,7 @@ class WakeProcessor(ReserveProcessor):
 
     async def cmd_wake(self, message: Message):
         "Proceed /wake command"
-        text, reply_markup, state = self.create_main_message()
+        text, reply_markup, state, _ = self.create_main_message()
 
         self.update_state(message)
         state_manager = self.state_manager

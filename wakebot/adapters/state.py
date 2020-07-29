@@ -93,7 +93,7 @@ class StateManager:
         state_data["state"] = self.__state
         state_data["state_type"] = self.__state_type
 
-        if not (self.__data is None):
+        if self.__data:
             state_data["data"] = self.__data
 
         self.data_adapter.update_data(self.state_id, state_data)

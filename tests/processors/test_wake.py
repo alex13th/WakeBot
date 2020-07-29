@@ -2,7 +2,6 @@
 from tests.mocks.aiogram import Dispatcher
 from tests.processors.test_reserve import ReserveProcessorTestCase
 
-from aiogram.types import Message, CallbackQuery, Chat, User
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from wakebot.adapters.data import MemoryDataAdapter
@@ -15,38 +14,13 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
     "WakeProcessor class"
 
     def setUp(self):
+        super().setUp()
         self.strings = RuGeneral
-
-        self.chat = Chat()
-        self.chat.id = 101
-        self.user = User()
-        self.user.id = 111
 
         dp = Dispatcher()
         self.data_adapter = MemoryDataAdapter()
         self.state_manager = StateManager(self.data_adapter)
         self.processor = WakeProcessor(dp, self.state_manager, self.strings)
-
-        message = Message()
-        message.chat = self.chat
-        message.from_user = self.user
-        message.message_id = 121
-        message.text = "Some text"
-        message.answer = self.answer_mock
-        message.edit_text = self.edit_text_mock
-        self.test_message = message
-
-        callback = CallbackQuery()
-        callback.message = message
-        self.test_callback_query = callback
-
-    async def answer_mock(self, text, parse_mode=None, reply_markup=None):
-        self.message = Message()
-        self.message.text = text
-        self.message.reply_markup = reply_markup
-
-    async def edit_text_mock(self, text, parse_mode=None, reply_markup=None):
-        await self.answer_mock(text, parse_mode, reply_markup)
 
     def append_state(self, key, state_type="*", state="*"):
         state_data = {}
@@ -162,4 +136,5 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
                          reply_markup, "wake", "date")
 
 
-WakeProcessorTestCase().run_tests_async()
+if __name__ == "__main__":
+    WakeProcessorTestCase().run_tests_async()

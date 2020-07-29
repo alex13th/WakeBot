@@ -37,9 +37,24 @@ class StatedProcessor:
         self.state_type = state_type
         self.parse_mode = parse_mode
 
+        self.callback_query_handlers = []
+
     @property
     def state_manager(self):
         return self.__state_manager
+
+    def get_callback_query_filter(self, state, state_type):
+        def callback_query_filter(callback_query):
+            return self.check_filter(callback_query,
+                                     state_type=state_type, state=state)
+        return callback_query_filter
+
+    def register_callback_query_handler(self, handler, state, state_type=None):
+        state_type = state_type or self.state_type
+        callback_filter = self.get_callback_query_filter(state_type=state_type,
+                                                         state=state)
+        self.__dispatcher.register_callback_query_handler(handler,
+                                                          callback_filter)
 
     def check_filter(self, callback_query, state_type="*", state="*"):
         """Check message is matched filter
