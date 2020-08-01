@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-from datetime import date, timedelta
-from tests import BaseTestCase
-from tests.mocks.aiogram import Dispatcher
+from ..base_test_case import BaseTestCase
+from ..mocks.aiogram import Dispatcher
 
-from aiogram.types import Message, CallbackQuery, Chat, User
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from datetime import date, timedelta
 
 from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.state import StateManager
 from wakebot.processors import RuGeneral
 from wakebot.processors.reserve import ReserveProcessor
+
+from aiogram.types import Message, CallbackQuery, Chat, User
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 class ReserveProcessorTestCase(BaseTestCase):

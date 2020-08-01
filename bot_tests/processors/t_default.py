@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from tests import BaseTestCase
+from ..mocks.aiogram import Dispatcher
+from ..base_test_case import BaseTestCase
+
 from aiogram.types import Message
 from wakebot.processors.default import DefaultProcessor
 from wakebot.processors import RuGeneral
-from tests.mocks.aiogram import Dispatcher
 
 
 class DefaultProcessorTestCase(BaseTestCase):

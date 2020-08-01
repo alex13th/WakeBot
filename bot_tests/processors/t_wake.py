@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from tests.mocks.aiogram import Dispatcher
-from tests.processors.test_reserve import ReserveProcessorTestCase
+from ..mocks.aiogram import Dispatcher
+from ..processors.t_reserve import ReserveProcessorTestCase
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 

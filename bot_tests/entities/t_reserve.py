@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import unittest
+from ..base_test_case import BaseTestCase
 from datetime import date, time, datetime, timedelta
 
 from wakebot.entities.reserve import Reserve
 from wakebot.entities.user import User
 
 
-class ReserveTestCase(unittest.TestCase):
+class ReserveTestCase(BaseTestCase):
     """Тесты модуля произвольного резервирования """
 
     def setUp(self):
@@ -19,28 +19,30 @@ class ReserveTestCase(unittest.TestCase):
 
     def check_reserve(self, reserve, start_reserve, end_reserve,
                       minutes, user):
-        self.assertEqual(reserve.start, start_reserve)
-        self.assertEqual(reserve.end, end_reserve)
-        self.assertEqual(reserve.start_date, start_reserve.date())
-        self.assertEqual(reserve.start_time, start_reserve.time())
-        self.assertEqual(reserve.end_date, end_reserve.date())
-        self.assertEqual(reserve.end_time, end_reserve.time())
-        self.assertEqual(reserve.minutes, minutes)
-        self.assertEqual(reserve.user, user)
+        passed, alert = self.assert_params(reserve.start, start_reserve)
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.end, end_reserve)
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.start_date,
+                                           start_reserve.date())
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.start_time,
+                                           start_reserve.time())
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.end_date,
+                                           end_reserve.date())
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.end_time,
+                                           end_reserve.time())
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.minutes,
+                                           minutes)
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.user,
+                                           user)
+        assert passed, alert
 
-    def test_default_properties(self):
-        """Созданиен объекта со свойствами по умолчению"""
-        reserve = Reserve()
-
-        self.assertIsNone(reserve.start)
-        self.assertIsNone(reserve.start_date)
-        self.assertIsNone(reserve.start_time)
-        self.assertIsNone(reserve.end)
-        self.assertIsNone(reserve.end_date)
-        self.assertIsNone(reserve.end_time)
-        self.assertIsNone(reserve.user)
-
-    def test_create_with_properties(self):
+    async def test_create_with_properties(self):
         """Создания объекта со свойствами"""
         reserve = self.reserve
         minutes = self.minutes
@@ -50,7 +52,7 @@ class ReserveTestCase(unittest.TestCase):
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
-    def test_change_start(self):
+    async def test_change_start(self):
         """Изменение времени начала резервирования"""
         reserve = self.reserve
         minutes = self.minutes
@@ -63,7 +65,7 @@ class ReserveTestCase(unittest.TestCase):
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
-    def test_change_end(self):
+    async def test_change_end(self):
         """Изменение времени окончания резервирования"""
         reserve = self.reserve
         minutes = self.minutes
@@ -76,7 +78,7 @@ class ReserveTestCase(unittest.TestCase):
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
-    def test_change_minutes(self):
+    async def test_change_minutes(self):
         """Изменение продолжительности резервирования"""
         reserve = self.reserve
         start = datetime.combine(self.start_date, self.start_time)
@@ -90,21 +92,23 @@ class ReserveTestCase(unittest.TestCase):
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
-    def test_to_str_incomplete(self):
+    async def test_to_str_incomplete(self):
         """Строка незавершенного резервирования"""
         reserve = Reserve()
-        self.assertEqual(str(reserve), "")
+        passed, alert = self.assert_params(str(reserve), "")
+        assert passed, alert
 
-    def test_to_str_oneday(self):
+    async def test_to_str_oneday(self):
         """Строка однодневного резервирования"""
         reserve = self.reserve
 
         reserve_str = "{}: {} - {}".format(reserve.start_date,
                                            reserve.start_time,
                                            reserve.end_time)
-        self.assertEqual(str(reserve), reserve_str)
+        passed, alert = self.assert_params(str(reserve), reserve_str)
+        assert passed, alert
 
-    def test_to_str_multiday(self):
+    async def test_to_str_multiday(self):
         """Строка многодневного резервирования"""
         reserve = self.reserve
         reserve.minutes = 1500
@@ -113,10 +117,5 @@ class ReserveTestCase(unittest.TestCase):
                                              reserve.start_time,
                                              reserve.end_date,
                                              reserve.end_time)
-        self.assertEqual(str(reserve), reserve_str)
-
-
-try:
-    unittest.main()
-except SystemExit:
-    pass
+        passed, alert = self.assert_params(str(reserve), reserve_str)
+        assert passed, alert

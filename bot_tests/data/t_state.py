@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import unittest
-from tests import BaseTestCase
+from ..base_test_case import BaseTestCase
 
 from aiogram.types import Chat, User
 from aiogram.types import Message, CallbackQuery
@@ -8,7 +7,7 @@ from wakebot.adapters.state import StateManager, StateProvider
 from wakebot.adapters.data import MemoryDataAdapter
 
 
-class StateManagerTestCase(unittest.TestCase):
+class StateManagerTestCase(BaseTestCase):
 
     def setUp(self):
         self.data_adapter = MemoryDataAdapter()
@@ -17,54 +16,74 @@ class StateManagerTestCase(unittest.TestCase):
         self.data_adapter.append_data("101-111-122", state_data)
         self.data_adapter.append_data("101-111-122", state_data)
 
-    def test_create_object(self):
+    async def test_create_object(self):
         state_mgr = StateManager(self.data_adapter, 101, 111)
 
-        self.assertEqual(state_mgr.data_adapter, self.data_adapter)
-        self.assertEqual(state_mgr.state_id, "101-111")
-        self.assertEqual(state_mgr.state_type, "")
-        self.assertEqual(state_mgr.state, "")
+        passed, alert = self.assert_params(state_mgr.data_adapter,
+                                           self.data_adapter)
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state_id, "101-111")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state_type, "")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state, "")
+        assert passed, alert
 
-    def test_create_object_with_message(self):
+    async def test_create_object_with_message(self):
         state_mgr = StateManager(self.data_adapter, 101, 111, 121)
 
-        self.assertEqual(state_mgr.state_id, "101-111-121")
-        self.assertEqual(state_mgr.state_type, "")
-        self.assertEqual(state_mgr.state, "")
+        passed, alert = self.assert_params(state_mgr.state_id, "101-111-121")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state_type, "")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state, "")
+        assert passed, alert
 
-    def test_create_object_with_storied(self):
+    async def test_create_object_with_storied(self):
         state_mgr = StateManager(self.data_adapter, 101, 111, 122)
 
-        self.assertEqual(state_mgr.state_id, "101-111-122")
-        self.assertEqual(state_mgr.state_type, "reserve")
-        self.assertEqual(state_mgr.state, "main")
+        passed, alert = self.assert_params(state_mgr.state_id, "101-111-122")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state_type, "reserve")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state, "main")
+        assert passed, alert
 
-    def test_change_state(self):
+    async def test_change_state(self):
         state_mgr = StateManager(self.data_adapter, 101, 111, 122)
 
         state_mgr.set_state("book")
 
-        self.assertEqual(state_mgr.state_id, "101-111-122")
-        self.assertEqual(state_mgr.state_type, "reserve")
-        self.assertEqual(state_mgr.state, "book")
+        passed, alert = self.assert_params(state_mgr.state_id, "101-111-122")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state_type, "reserve")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state, "book")
+        assert passed, alert
 
-    def test_change_state_type(self):
+    async def test_change_state_type(self):
         state_mgr = StateManager(self.data_adapter, 101, 111, 122)
 
         state_mgr.set_state(state_type="reserve1")
 
-        self.assertEqual(state_mgr.state_id, "101-111-122")
-        self.assertEqual(state_mgr.state_type, "reserve1")
-        self.assertEqual(state_mgr.state, "main")
+        passed, alert = self.assert_params(state_mgr.state_id, "101-111-122")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state_type, "reserve1")
+        assert passed, alert
+        passed, alert = self.assert_params(state_mgr.state, "main")
+        assert passed, alert
 
-    def test_set_state(self):
+    async def test_set_state(self):
         state_mgr = StateManager(self.data_adapter, 101, 111)
 
         state_mgr.set_state("book2", "reserve2", 122)
         state_data = self.data_adapter.get_data_by_keys("101-111-122")
 
-        self.assertEqual(state_data["state_type"], "reserve2")
-        self.assertEqual(state_data["state"], "book2")
+        passed, alert = self.assert_params(state_data["state_type"],
+                                           "reserve2")
+        assert passed, alert
+        passed, alert = self.assert_params(state_data["state"], "book2")
+        assert passed, alert
 
 
 class StateProviderTestCase(BaseTestCase):
@@ -108,7 +127,8 @@ class StateProviderTestCase(BaseTestCase):
 
         await self.message_default(test_message)
 
-        self.assertEqual(self.result_text, "Default message")
+        passed, alert = self.assert_params(self.result_text, "Default message")
+        assert passed, alert
 
     async def test_message_reserve_main(self):
         """Reserve state main message"""
@@ -121,7 +141,9 @@ class StateProviderTestCase(BaseTestCase):
 
         await self.message_reserve_main(test_message)
 
-        self.assertEqual(self.result_text, "Message-121: reserve main")
+        passed, alert = self.assert_params(self.result_text,
+                                           "Message-121: reserve main")
+        assert passed, alert
 
     async def test_callback_query_reserve_book(self):
         """Reserve state main message"""
@@ -134,17 +156,6 @@ class StateProviderTestCase(BaseTestCase):
         test_callback_query.message = test_message
 
         await self.callback_query_reserve_book(test_callback_query)
-        expected_value = "Callback: reserve book"
-
-        passed = self.result_text == expected_value
-        assert passed, self.get_failure_text(self.result_text,
-                                             expected_value)
-
-
-try:
-    unittest.main()
-except SystemExit:
-    pass
-
-sp_ts = StateProviderTestCase()
-sp_ts.run_tests_async()
+        passed, alert = self.assert_params(self.result_text,
+                                           "Callback: reserve book")
+        assert passed, alert

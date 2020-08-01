@@ -15,11 +15,11 @@ class BaseTestCase():
     UNDERLINE = '\033[4m'
 
     def assert_params(self, value, expected_value):
-        passed = value and value == expected_value
+        passed = value == expected_value
         return (passed, self.get_failure_text(value, expected_value))
 
     def setUp(self):
-        raise NotImplementedError
+        pass
 
     def print_success(self, test_name):
         print(f"{test_name}: {self.OKGREEN}SUCCESS{self.ENDC}")
@@ -74,3 +74,5 @@ class BaseTestCase():
 
         print(f"\nRan {len(method_list)} test (failure = {fail_count}) ")
         print(footer)
+
+        return len(method_list), fail_count
