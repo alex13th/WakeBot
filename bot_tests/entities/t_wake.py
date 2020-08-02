@@ -2,20 +2,21 @@
 from ..base_test_case import BaseTestCase
 from datetime import date, time, datetime, timedelta
 
-from wakebot.entities.reserve import Reserve
+from wakebot.entities.wake import Wake
 from wakebot.entities.user import User
 
 
-class ReserveTestCase(BaseTestCase):
-    """Тесты модуля произвольного резервирования """
+class WakeTestCase(BaseTestCase):
+    """A Wake class tests """
 
     def setUp(self):
         self.user = User("Firstname")
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
-        self.minutes = 5  # продолжительность
-        self.reserve = Reserve(self.user, self.start_date,
-                               self.start_time)
+        self.minutes = 30  # продолжительность
+        self.set_count = 3
+        self.reserve = Wake(self.user, self.start_date, self.start_time,
+                            set_count=3, board=1, hydro=1)
 
     def check_reserve(self, reserve, start_reserve, end_reserve,
                       minutes, user):
@@ -88,13 +89,13 @@ class ReserveTestCase(BaseTestCase):
         minutes = 40
         start_reserve = start
         end_reserve = start + timedelta(minutes=40)
-        reserve.set_count = 8
+        reserve.set_count = 4
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
     async def test_to_str_incomplete(self):
         """Строка незавершенного резервирования"""
-        reserve = Reserve()
+        reserve = Wake()
         passed, alert = self.assert_params(str(reserve), "")
         assert passed, alert
 
@@ -111,7 +112,7 @@ class ReserveTestCase(BaseTestCase):
     async def test_to_str_multiday(self):
         """Строка многодневного резервирования"""
         reserve = self.reserve
-        reserve.set_count = 300
+        reserve.set_count = 150
 
         reserve_str = "{} {} - {} {}".format(reserve.start_date,
                                              reserve.start_time,
@@ -122,13 +123,13 @@ class ReserveTestCase(BaseTestCase):
 
     async def test_equal(self):
         """Реализация сравнения резервирований"""
-        reserve1 = Reserve(self.user, self.start_date,
-                           self.start_time)
+        reserve1 = Wake(self.user, self.start_date, self.start_time,
+                        set_count=3, board=1, hydro=1)
 
         passed, alert = self.assert_params(reserve1, self.reserve)
         assert passed, alert
 
-        reserve1 = Reserve(self.user, self.start_date,
-                           self.start_time, set_count=2)
+        reserve1 = Wake(self.user, self.start_date,
+                        self.start_time,)
         passed, alert = self.assert_params(reserve1, self.reserve)
         assert not passed, alert
