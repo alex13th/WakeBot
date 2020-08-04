@@ -57,6 +57,10 @@ class StateManager:
     def state(self):
         return self.__state
 
+    @property
+    def data(self):
+        return self.__data
+
     def get_state(self, chat_id, user_id, message_id=None):
         """Get current state from data adapter """
         self.__chat_id = chat_id
@@ -64,11 +68,16 @@ class StateManager:
         self.__message_id = message_id
 
         if chat_id and user_id:
-            state_data = self.__data_adapter.get_data_by_keys(
+            state_data: dict = self.__data_adapter.get_data_by_keys(
                 key=self.state_id)
             if state_data:
                 self.__state_type = state_data["state_type"]
                 self.__state = state_data["state"]
+                self.__data = state_data.get("data", None)
+            else:
+                self.__state_type = ""
+                self.__state = ""
+                self.__data = None
 
     def set_state(self, state=None, state_type=None,
                   message_id=None, data=None):
@@ -98,9 +107,12 @@ class StateManager:
 
         self.data_adapter.update_data(self.state_id, state_data)
 
+    def set_data(self, data):
+        self.__data = data
+
     def finish(self):
         """Remove current state"""
-        raise NotImplementedError
+        self.__data_adapter.remove_data_by_keys(self.state_id)
 
 
 class StateProvider:

@@ -33,11 +33,13 @@ class Reserve:
         set_type:
             A reservation set type instances.
         set_count:
-            A integer value of set's count.
+            An integer value of set's count.
+        count:
+            An integer value of count reservation pieces
     """
 
-    def __init__(self, user=None, start_date=None,
-                 start_time=None, set_type=None, set_count=1):
+    def __init__(self, user=None, start_date=None, start_time=None,
+                 set_type=None, set_count=1, count=1):
         """Reservation data class
 
         Args:
@@ -54,11 +56,14 @@ class Reserve:
         """
         if not set_type:
             set_type = ReserveSetType("set", 5)
+        if not start_date:
+            start_date = date.today()
         self.__user = user
         self.__start_date = start_date
         self.__start_time = start_time
         self.set_type = set_type
         self.set_count = set_count
+        self.count = count
 
     @property
     def is_complete(self):
@@ -69,6 +74,11 @@ class Reserve:
     def user(self):
         """Информация о клиенте"""
         return self.__user
+
+    @user.setter
+    def user(self, value):
+        """Информация о клиенте"""
+        self.__user = value
 
     @property
     def start(self):

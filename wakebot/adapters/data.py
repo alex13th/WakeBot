@@ -12,7 +12,7 @@ class BaseDataAdapter:
         return NotImplementedError
 
     def get_data_by_keys(self, **kwargs) -> iter:
-        """Get a set of data  from storage by a keys
+        """Get a set of data from storage by a keys
 
         Args:
             **kwargs:
@@ -38,6 +38,18 @@ class BaseDataAdapter:
         Args:
             **kwargs:
                 A custom set of arguments (defined by child class)
+        """
+        return NotImplementedError
+
+    def remove_data_by_keys(self, **kwargs) -> iter:
+        """Remove data from storage by a keys
+
+        Args:
+            **kwargs:
+                A custom set of arguments (defined by child class)
+
+        Returns:
+            A iterator object of given data
         """
         return NotImplementedError
 
@@ -105,3 +117,15 @@ class MemoryDataAdapter(BaseDataAdapter):
                 A dictionary of a data to append to storage
         """
         self.__storage[key] = data
+
+    def remove_data_by_keys(self, key):
+        """Remove data from storage by a keys
+
+        Args:
+            **kwargs:
+                A custom set of arguments (defined by child class)
+
+        Returns:
+            A iterator object of given data
+        """
+        del self.__storage[key]

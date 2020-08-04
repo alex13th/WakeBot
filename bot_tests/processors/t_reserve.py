@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+
 from ..base_test_case import BaseTestCase
 from ..mocks.aiogram import Dispatcher
 
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.state import StateManager
 from wakebot.processors import RuGeneral
 from wakebot.processors.reserve import ReserveProcessor
+from wakebot.entities.reserve import Reserve
 
 from aiogram.types import Message, CallbackQuery, Chat, User
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -22,6 +24,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         self.chat = Chat()
         self.chat.id = 101
         self.user = User()
+        self.user.first_name = "Firstname"
         self.user.id = 111
 
         dp = Dispatcher()
@@ -35,6 +38,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         message.message_id = 121
         message.text = "Some text"
         message.answer = self.answer_mock
+        message.delete = self.delete_mock
         message.edit_text = self.edit_text_mock
         self.test_message = message
 
@@ -47,6 +51,14 @@ class ReserveProcessorTestCase(BaseTestCase):
         self.message = Message()
         self.message.text = text
         self.message.reply_markup = reply_markup
+        answer = Message()
+        answer.message_id = 1001
+        answer.from_user = self.user
+        answer.chat = self.chat
+        return answer
+
+    async def delete_mock(self):
+        pass
 
     async def callback_answer_mock(self, text):
         self.callback_answer_text = text
@@ -63,11 +75,42 @@ class ReserveProcessorTestCase(BaseTestCase):
     def create_main_text(self):
         return "Hello message!"
 
-    def create_book_text(self):
-        return "Reserve Book menu message text"
+    def create_book_text(self, show_contact=False):
+        reserve = self.state_manager.data
+        result = ""
+
+        if reserve.user:
+            result += f"{self.strings.name_label} {reserve.user.displayname}\n"
+            if show_contact and reserve.user.phone_number:
+                result += (f"{self.strings.phone_label} "
+                           f"{reserve.user.phone_number}\n")
+
+        result += (f"{self.strings.reserve.date_label} "
+                   f"{reserve.start_date.strftime(self.strings.date_format)}"
+                   "\n")
+
+        if reserve.start_time:
+            start_time = reserve.start_time.strftime(self.strings.time_format)
+            result += (f"{self.strings.reserve.start_label} "
+                       f"{start_time}\n")
+            end_time = reserve.end_time.strftime(self.strings.time_format)
+            result += (f"{self.strings.reserve.end_label} "
+                       f"{end_time}\n")
+
+        result += (f"{self.strings.reserve.set_type_label} "
+                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+                   f" ({reserve.set_count})\n")
+
+        result += (f"{self.strings.count_label} "
+                   f"{reserve.count}\n")
+
+        return result
 
     def create_list_text(self):
         return "Reserve List menu message text"
+
+    def create_phone_text(self):
+        return f"{self.create_book_text()}\n{self.strings.phone_message}"
 
     def create_main_keyboard(self):
         """Create Main menu InlineKeyboardMarkup"""
@@ -83,7 +126,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         return result
 
     def create_book_keyboard(self):
-        """Create Book menu InlineKeyboardMarkup"""
+        """Create book menu InlineKeyboardMarkup"""
         result = InlineKeyboardMarkup(row_width=1)
 
         # Adding Date- and Time- buttons by a row for each
@@ -93,6 +136,18 @@ class ReserveProcessorTestCase(BaseTestCase):
         button = InlineKeyboardButton(self.strings.time_button,
                                       callback_data='time')
         result.add(button)
+
+        button = InlineKeyboardButton(self.strings.phone_button,
+                                      callback_data='phone')
+        result.add(button)
+
+        if self.state_manager.data:
+            reserve: Reserve = self.state_manager.data
+            if reserve.is_complete:
+                button = InlineKeyboardButton(
+                    self.strings.reserve.apply_button,
+                    callback_data='apply')
+                result.add(button)
 
         # Adding Back-button separately
         button = InlineKeyboardButton(self.strings.back_button,
@@ -133,7 +188,8 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         result = InlineKeyboardMarkup(row_width=row_width)
 
-        buttons = [InlineKeyboardButton(f"{start + i}:", callback_data=str(i))
+        buttons = [InlineKeyboardButton(f"{start + i}:",
+                   callback_data=str(i + self.strings.time_zone))
                    for i in range(count)]
 
         result.add(*buttons)
@@ -166,11 +222,12 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "main")
 
-        checked = self.processor.check_filter(callback, "reserve", "main")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "main")
         passed, message = self.assert_params(checked, True)
         assert passed, message
 
-        await self.processor.callback_query_main(callback)
+        await self.processor.callback_main(callback)
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "book")
@@ -183,11 +240,12 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "book")
 
-        checked = self.processor.check_filter(callback, "reserve", "book")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "book")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_book(callback)
+        await self.processor.callback_book(callback)
 
         self.check_state(state_key, self.create_main_text(),
                          reply_markup, "reserve", "main")
@@ -200,11 +258,12 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "book")
 
-        checked = self.processor.check_filter(callback, "reserve", "book")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "book")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_book(callback)
+        await self.processor.callback_book(callback)
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "date")
@@ -217,12 +276,35 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "date")
 
-        checked = self.processor.check_filter(callback, "reserve", "date")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "date")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_date(callback)
+        await self.processor.callback_date(callback)
 
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "reserve", "book")
+
+    async def test_callback_date_date(self):
+        """Proceed select date in Date menu"""
+        callback = self.test_callback_query
+        callback.data = "1"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "date")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "date")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_date(callback)
+
+        reserve = self.state_manager.data
+        passed, alert = self.assert_params(date.today() + timedelta(1),
+                                           reserve.start_date)
+        assert passed, alert
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "book")
 
@@ -234,14 +316,43 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "book")
 
-        checked = self.processor.check_filter(callback, "reserve", "book")
+        checked = self.processor.check_filter(callback.message,
+                                              "reserve", "book")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_book(callback)
+        await self.processor.callback_book(callback)
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "hour")
+
+    async def test_callback_book_phone(self):
+        """Proceed press Phone button in Book menu"""
+        callback = self.test_callback_query
+        callback.data = "phone"
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "book")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "book")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_book(callback)
+
+        text = self.create_phone_text()
+        state_key = "101-111"
+        state_data = self.data_adapter.get_data_by_keys(state_key)
+        passed, alert = self.assert_params(state_data["state_type"],
+                                           self.processor.state_type)
+        assert passed, alert
+        passed, alert = self.assert_params(state_data["state"],
+                                           "phone")
+        assert passed, alert
+
+        passed, alert = self.assert_params(self.processor.dispatcher.bot.text,
+                                           text)
+        assert passed, alert
 
     async def test_callback_hour_back(self):
         """Proceed press Back button in Hour menu"""
@@ -251,28 +362,35 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "hour")
 
-        checked = self.processor.check_filter(callback, "reserve", "hour")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "hour")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_hour(callback)
+        await self.processor.callback_hour(callback)
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "book")
 
     async def test_callback_minute(self):
-        """Proceed choose hour in Hour menu"""
+        """Proceed select hour in Hour menu"""
         callback = self.test_callback_query
         callback.data = "18"
         reply_markup = self.create_minute_keyboard()
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "hour")
 
-        checked = self.processor.check_filter(callback, "reserve", "hour")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "hour")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_hour(callback)
+        await self.processor.callback_hour(callback)
+
+        reserve = self.state_manager.data
+        passed, alert = self.assert_params(time(hour=18),
+                                           reserve.start_time)
+        assert passed, alert
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "minute")
@@ -285,14 +403,40 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "minute")
 
-        checked = self.processor.check_filter(callback, "reserve", "minute")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "minute")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_minute(callback)
+        await self.processor.callback_minute(callback)
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "hour")
+
+    async def test_callback_minute_minute(self):
+        """Proceed select minute in Minute menu"""
+        callback = self.test_callback_query
+        callback.data = "30"
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "minute")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "minute")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        reserve = self.state_manager.data
+        reserve.start_time = time(16, 15)
+
+        await self.processor.callback_minute(callback)
+
+        passed, alert = self.assert_params(time(hour=16, minute=30),
+                                           reserve.start_time)
+        assert passed, alert
+
+        reply_markup = self.create_book_keyboard()
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "reserve", "book")
 
     async def test_callback_main_list(self):
         """Proceed press List button in Main menu"""
@@ -302,11 +446,12 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "main")
 
-        checked = self.processor.check_filter(callback, "reserve", "main")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "main")
         passed, message = self.assert_params(checked, True)
         assert passed, message
 
-        await self.processor.callback_query_main(callback)
+        await self.processor.callback_main(callback)
 
         self.check_state(state_key, self.create_list_text(),
                          reply_markup, "reserve", "list")
@@ -319,17 +464,18 @@ class ReserveProcessorTestCase(BaseTestCase):
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "list")
 
-        checked = self.processor.check_filter(callback, "reserve", "list")
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "list")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        await self.processor.callback_query_list(callback)
+        await self.processor.callback_list(callback)
 
         self.check_state(state_key, self.create_main_text(),
                          reply_markup, "reserve", "main")
 
     def check_state(self, key, text, reply_markup,
-                    state_type=None, state=None):
+                    state_type=None, state=None, data=None):
         """A util method to check current state"""
 
         state_data = self.data_adapter.get_data_by_keys(key)
@@ -339,12 +485,15 @@ class ReserveProcessorTestCase(BaseTestCase):
         passed, alert = self.assert_params(self.message.reply_markup,
                                            reply_markup)
         assert passed, alert
+        passed, alert = self.assert_params(state_data["state"], state)
+        assert passed, alert
         if state_type:
             passed, alert = self.assert_params(state_data["state_type"],
                                                state_type)
-        assert passed, alert
-        passed, alert = self.assert_params(state_data["state"], state)
-        assert passed, alert
+            assert passed, alert
+        if data:
+            passed, alert = self.assert_params(state_data["data"], data)
+            assert passed, alert
 
 
 if __name__ == "__main__":
