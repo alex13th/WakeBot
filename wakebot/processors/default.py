@@ -11,7 +11,11 @@ class DefaultProcessor:
             A locale strings class
     """
 
-    def __init__(self, dispatcher: Dispatcher, strings,
+    __dispatcher: Dispatcher
+    strings: any
+    parse_mode = ParseMode.MARKDOWN
+
+    def __init__(self, dispatcher: Dispatcher, strings: any,
                  parse_mode=ParseMode.MARKDOWN):
         """Initialize ChatProvider object
 

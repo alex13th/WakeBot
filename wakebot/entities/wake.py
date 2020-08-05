@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
+from typing import Optional, Union
+from datetime import date, time
 from .reserve import Reserve, ReserveSetType
+from .user import User
 
 
 class Wake(Reserve):
@@ -26,10 +28,20 @@ class Wake(Reserve):
             A string value indicates type of set ("set", "hour").
         set_count:
             A integer value of set's count.
+        boad:
+            An integer value of a wakeboard equipment rent need
+        hydro:
+            An integer value of a hydrosuite equipment rent need
     """
 
-    def __init__(self, user=None, start_date=None, start_time=None,
-                 set_type=None, set_count=1, board=0, hydro=0):
+    def __init__(self,
+                 user: Optional[User] = None,
+                 start_date: Optional[date] = None,
+                 start_time: Optional[time] = None,
+                 set_type: Union[str, int, None] = None,
+                 set_count: Optional[int] = 1,
+                 board: Optional[int] = 0,
+                 hydro: Optional[int] = 0):
         """Wakeboard reservation data class
 
         Args:
@@ -55,7 +67,8 @@ class Wake(Reserve):
         self.board = board
         self.hydro = hydro
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
+        """Provide a built-in object comparation"""
         if (self.start_date == other.start_date
            and self.set_count == other.set_count
            and self.minutes == other.minutes

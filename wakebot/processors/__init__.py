@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from aiogram.types import ParseMode
 
 parse_mode = ParseMode.MARKDOWN

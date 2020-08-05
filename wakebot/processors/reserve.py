@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+from typing import Union
 from datetime import date, time, timedelta
 
 from aiogram.dispatcher import Dispatcher
@@ -17,17 +17,23 @@ class ReserveProcessor(StatedProcessor):
     """Proceed a reservaion process
 
     Attributes:
-        strings:
-            A locale strings class
+        dispatcher:
+            A telegram bot dispatcher instance instance.
         state_manager:
             A state manager class instance
+        strings:
+            A locale strings class
+        book_handlers:
+            A dictionary of book menu handlers.
+            A key matches InlineKeyboardButton.data value of book menu.
+            A value must contain handler function - f().
     """
 
     def __init__(self,
                  dispatcher: Dispatcher,
                  state_manager: StateManager,
-                 strings,
-                 state_type="reserve",
+                 strings: any,
+                 state_type: Union[str, int, None] = "reserve",
                  parse_mode=ParseMode.MARKDOWN):
         """Initialize a class instance
 
@@ -39,7 +45,7 @@ class ReserveProcessor(StatedProcessor):
             strings:
                 A locale strings class.
             state_type:
-                Optional, A default state type.
+                Optional. A default state type.
                 Default value: "reserve"
             parse_mode:
                 Optional. A parse mode of telegram messages (ParseMode).
@@ -63,6 +69,8 @@ class ReserveProcessor(StatedProcessor):
         self.book_handlers["phone"] = self.book_phone
 
     async def message_phone(self, message: Message):
+        """Phone number reply message handler"""
+
         reserve = self.state_manager.data
         reserve.user.phone_number = message.text
         self.state_manager.finish()
@@ -85,7 +93,7 @@ class ReserveProcessor(StatedProcessor):
             data=reserve)
 
     async def callback_main(self, callback_query: CallbackQuery):
-        """Proceed Main menu buttons"""
+        """Main menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
 
         text = reply_markup = state = None
@@ -104,12 +112,12 @@ class ReserveProcessor(StatedProcessor):
         await callback_query.answer(answer)
 
     async def callback_book(self, callback_query: CallbackQuery):
-        """Proceed Book menu habdlers"""
+        """Book menu CallbackQuery handler"""
         # State manager updated by StatedProcessor.check_filter method
         await self.book_handlers[callback_query.data](callback_query)
 
     async def callback_date(self, callback_query: CallbackQuery):
-        """Proceed Date menu buttons"""
+        """Date menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
 
         text = reply_markup = state = None
@@ -132,7 +140,7 @@ class ReserveProcessor(StatedProcessor):
         await callback_query.answer(answer)
 
     async def callback_hour(self, callback_query: CallbackQuery):
-        """Proceed Hour menu buttons"""
+        """Hour menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
 
         text = reply_markup = state = None
@@ -161,7 +169,7 @@ class ReserveProcessor(StatedProcessor):
         await callback_query.answer(answer)
 
     async def callback_minute(self, callback_query: CallbackQuery):
-        """Proceed Minute menu buttons"""
+        """Minute menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
 
         text = reply_markup = state = None
@@ -190,7 +198,7 @@ class ReserveProcessor(StatedProcessor):
         await callback_query.answer(answer)
 
     async def callback_list(self, callback_query: CallbackQuery):
-        """Proceed Main menu buttons"""
+        """List menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
 
         text = reply_markup = state = None
@@ -198,9 +206,6 @@ class ReserveProcessor(StatedProcessor):
 
         if callback_query.data == "back":
             text, reply_markup, state, answer = self.create_main_message()
-
-        elif callback_query.data == "book":
-            text, reply_markup, state, answer = self.create_book_message()
 
         elif callback_query.data == "list":
             text, reply_markup, state, answer = self.create_list_message()
@@ -211,19 +216,23 @@ class ReserveProcessor(StatedProcessor):
         state_manager.set_state(state=state)
         await callback_query.answer(answer)
 
-    async def book_back(self, callback_query):
+    async def book_back(self, callback_query: CallbackQuery):
+        """Proceed Back button in Book menu"""
         await self.callback_query_action(callback_query,
                                          *self.create_main_message())
 
-    async def book_date(self, callback_query):
+    async def book_date(self, callback_query: CallbackQuery):
+        """Proceed Date button in Book menu"""
         await self.callback_query_action(callback_query,
                                          *self.create_date_message())
 
-    async def book_time(self, callback_query):
+    async def book_time(self, callback_query: CallbackQuery):
+        """Proceed Time button in Book menu"""
         await self.callback_query_action(callback_query,
                                          *self.create_hour_message())
 
-    async def book_phone(self, callback_query):
+    async def book_phone(self, callback_query: CallbackQuery):
+        """Proceed Phone button in Book menu"""
         state_manager = self.state_manager
         reserve = self.state_manager.data
 
@@ -244,9 +253,26 @@ class ReserveProcessor(StatedProcessor):
         state_manager.set_state(state_type=self.state_type, state=state,
                                 data=reserve)
 
-    async def callback_query_action(self, callback_query, text, reply_markup,
-                                    state, answer):
-        """Proceed standart CallbackQuery action"""
+    async def callback_query_action(self,
+                                    callback_query: CallbackQuery,
+                                    text: str,
+                                    reply_markup: InlineKeyboardMarkup,
+                                    state: Union[str, int, None],
+                                    answer: str):
+        """Proceed common CallbackQuery action
+
+        Args:
+            callback_query:
+                A CallbackQuery instance.
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         state_manager = self.state_manager
         state_manager.set_state(state=state)
 
@@ -256,6 +282,18 @@ class ReserveProcessor(StatedProcessor):
         await callback_query.answer(answer)
 
     def create_main_message(self):
+        """Prepare a main menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = self.create_main_text()
         reply_markup = self.create_main_keyboard()
         state = "main"
@@ -264,6 +302,18 @@ class ReserveProcessor(StatedProcessor):
         return (text, reply_markup, state, answer)
 
     def create_book_message(self):
+        """Prepare a book menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = self.create_book_text()
         reply_markup = self.create_book_keyboard()
         state = "book"
@@ -272,6 +322,18 @@ class ReserveProcessor(StatedProcessor):
         return (text, reply_markup, state, answer)
 
     def create_list_message(self):
+        """Prepare a list menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = self.create_list_text()
         reply_markup = self.create_list_keyboard()
         state = "list"
@@ -280,6 +342,18 @@ class ReserveProcessor(StatedProcessor):
         return (text, reply_markup, state, answer)
 
     def create_date_message(self):
+        """Prepare a date menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = self.create_book_text()
         reply_markup = self.create_date_keyboard()
         state = "date"
@@ -288,6 +362,18 @@ class ReserveProcessor(StatedProcessor):
         return (text, reply_markup, state, answer)
 
     def create_hour_message(self):
+        """Prepare a hour menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = self.create_book_text()
         reply_markup = self.create_hour_keyboard()
         state = "hour"
@@ -296,6 +382,18 @@ class ReserveProcessor(StatedProcessor):
         return (text, reply_markup, state, answer)
 
     def create_minute_message(self):
+        """Prepare a minute menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = self.create_book_text()
         reply_markup = self.create_minute_keyboard()
         state = "minute"
@@ -304,6 +402,18 @@ class ReserveProcessor(StatedProcessor):
         return (text, reply_markup, state, answer)
 
     def create_phone_message(self):
+        """Prepare a phone message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
         text = f"{self.create_book_text()}\n{self.strings.phone_message}"
         reply_markup = ForceReply()
         state = "phone"
@@ -311,10 +421,22 @@ class ReserveProcessor(StatedProcessor):
 
         return (text, reply_markup, state, answer)
 
-    def create_main_text(self):
+    def create_main_text(self) -> str:
+        """Create a main menu text
+
+        Returns:
+            A message text.
+        """
+
         return "Hello message!"
 
-    def create_book_text(self, show_contact=True):
+    def create_book_text(self, show_contact: bool = True) -> str:
+        """Create a book menu text
+
+        Returns:
+            A message text.
+        """
+
         reserve = self.state_manager.data
         result = ""
 
@@ -345,14 +467,28 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_list_text(self):
+    def create_list_text(self) -> str:
+        """Create a list menu text
+
+        Returns:
+            A message text.
+        """
         return "Reserve List menu message text"
 
-    def create_phone_text(self):
+    def create_phone_text(self) -> str:
+        """Create a phone message text
+
+        Returns:
+            A message text.
+        """
         return f"{self.create_book_text()}\n{self.strings.phone_message}"
 
-    def create_main_keyboard(self):
-        """Create main menu InlineKeyboardMarkup"""
+    def create_main_keyboard(self) -> InlineKeyboardMarkup:
+        """Create main menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
         result = InlineKeyboardMarkup(row_width=1)
 
         button = InlineKeyboardButton(self.strings.reserve.start_book_button,
@@ -364,8 +500,12 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_list_keyboard(self):
-        """Create list menu InlineKeyboardMarkup"""
+    def create_list_keyboard(self) -> InlineKeyboardMarkup:
+        """Create list menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
         result = InlineKeyboardMarkup(row_width=1)
         button = InlineKeyboardButton(self.strings.back_button,
                                       callback_data='back')
@@ -373,8 +513,12 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_book_keyboard(self):
-        """Create book menu InlineKeyboardMarkup"""
+    def create_book_keyboard(self) -> InlineKeyboardMarkup:
+        """Create book menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
         result = InlineKeyboardMarkup(row_width=1)
 
         # Adding Date- and Time- buttons by a row for each
@@ -404,8 +548,12 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_date_keyboard(self):
-        """Create Date menu InlineKeyboardMarkup"""
+    def create_date_keyboard(self) -> InlineKeyboardMarkup:
+        """Create Date menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
 
         now = date.today()
         result = InlineKeyboardMarkup(row_width=3)
@@ -422,8 +570,13 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_hour_keyboard(self, start=9, count=15, row_width=5):
-        """Create Hour menu InlineKeyboardMarkup"""
+    def create_hour_keyboard(self, start: int = 9, count: int = 15,
+                             row_width: int = 5) -> InlineKeyboardMarkup:
+        """Create Hour menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
 
         result = InlineKeyboardMarkup(row_width=row_width)
 
@@ -438,8 +591,13 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_minute_keyboard(self, step=5, row_width=6):
-        """Create Hour menu InlineKeyboardMarkup"""
+    def create_minute_keyboard(self, step: int = 5,
+                               row_width: int = 6) -> InlineKeyboardMarkup:
+        """Create Hour menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
 
         result = InlineKeyboardMarkup(row_width=row_width)
 
@@ -454,7 +612,12 @@ class ReserveProcessor(StatedProcessor):
         return result
 
     # Temporarry unused
-    def create_phone_keyboard(self):
+    def create_phone_keyboard(self) -> ReplyKeyboardMarkup:
+        """Create Phone message ReplyKeyboardMarkup
+
+        Returns:
+            A ReplyKeyboardMarkup instance.
+        """
         result = ReplyKeyboardMarkup(resize_keyboard=True,
                                      one_time_keyboard=True)
         result.add(KeyboardButton(self.strings.phone_reply_button,
@@ -462,7 +625,14 @@ class ReserveProcessor(StatedProcessor):
         result.add(KeyboardButton(self.strings.phone_refuse_button))
         return result
 
-    def create_reserve(self, message):
+    def create_reserve(self, message: Message) -> Reserve:
+        """Create new Reserve instance
+        An update_state method call this when state hasn't an reservation data.
+
+        Returns:
+            An Reserve class or child class instance .
+        """
+
         result = Reserve()
 
         from_user = message.from_user
@@ -473,7 +643,16 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def update_state(self, message: Message, message_state=True):
+    def update_state(self, message: Message, message_state: bool = True):
+        """Update StateManager for message
+
+        Args:
+            message:
+                A message to check matching
+            message_state:
+                A boolean indicates to need use message_id for define state
+        """
+
         super().update_state(message, message_state=message_state)
 
         if not self.state_manager.data:

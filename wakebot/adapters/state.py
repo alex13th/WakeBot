@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from typing import Union, Optional
 from wakebot.adapters.data import BaseDataAdapter
 
 
@@ -17,8 +17,16 @@ class StateManager:
             A current state
     """
 
-    def __init__(self, data_adapter: BaseDataAdapter,
-                 chat_id=None, user_id=None, message_id=None):
+    __data_adapter: BaseDataAdapter
+    __state_type: Union[str, int]
+    __state: Union[str, int]
+    __data: any
+
+    def __init__(self,
+                 data_adapter: BaseDataAdapter,
+                 chat_id: Optional[int] = None,
+                 user_id: Optional[int] = None,
+                 message_id: Optional[int] = None):
         """Initialize StateManager object
 
         Args:
@@ -61,7 +69,10 @@ class StateManager:
     def data(self):
         return self.__data
 
-    def get_state(self, chat_id, user_id, message_id=None):
+    def get_state(self,
+                  chat_id: int,
+                  user_id: int,
+                  message_id: Optional[int] = None):
         """Get current state from data adapter """
         self.__chat_id = chat_id
         self.__user_id = user_id
@@ -79,8 +90,11 @@ class StateManager:
                 self.__state = ""
                 self.__data = None
 
-    def set_state(self, state=None, state_type=None,
-                  message_id=None, data=None):
+    def set_state(self,
+                  state: Optional[Union[str, int]] = None,
+                  state_type: Optional[Union[str, int]] = None,
+                  message_id: Optional[int] = None,
+                  data: Optional[any] = None):
         """Set current state to data adapter
 
             Args:
@@ -91,12 +105,12 @@ class StateManager:
                 message_id:
                     Optional. A string type of state
                 data:
-                    Optional. A dictionary that contain a state data
+                    Optional. A dictionary that contains a state data
         """
-        self.__state = state if state else self.__state
-        self.__state_type = state_type if state_type else self.__state_type
-        self.__message_id = message_id if message_id else self.__message_id
-        self.__data = data if data else self.__data
+        self.__state = state or self.__state
+        self.__state_type = state_type or self.__state_type
+        self.__message_id = message_id or self.__message_id
+        self.__data = data or self.__data
 
         state_data = {}
         state_data["state"] = self.__state
@@ -107,11 +121,17 @@ class StateManager:
 
         self.data_adapter.update_data(self.state_id, state_data)
 
-    def set_data(self, data):
+    def set_data(self, data: any):
+        """Set state data
+
+            Args:
+                data:
+                    A dictionary that contains a state data
+        """
         self.__data = data
 
     def finish(self):
-        """Remove current state"""
+        """Remove current state from storage"""
         self.__data_adapter.remove_data_by_keys(self.state_id)
 
 

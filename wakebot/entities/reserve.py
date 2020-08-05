@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
+from typing import Optional, Union
 from datetime import datetime, timedelta, date, time
+from .user import User
 
 
 class ReserveSetType():
@@ -38,8 +39,20 @@ class Reserve:
             An integer value of count reservation pieces
     """
 
-    def __init__(self, user=None, start_date=None, start_time=None,
-                 set_type=None, set_count=1, count=1):
+    user: Optional[User]
+    start_date: Optional[date]
+    start_time: Optional[time]
+    set_type: Union[str, int, None]
+    set_count: int
+    count: int
+
+    def __init__(self,
+                 user: Optional[User] = None,
+                 start_date: Optional[date] = None,
+                 start_time: Optional[time] = None,
+                 set_type: Union[str, int, None] = None,
+                 set_count: int = 1,
+                 count: int = 1):
         """Reservation data class
 
         Args:
@@ -66,22 +79,22 @@ class Reserve:
         self.count = count
 
     @property
-    def is_complete(self):
+    def is_complete(self) -> bool:
         """Информация о клиенте"""
         return self.__start_date and self.__start_time and self.minutes
 
     @property
-    def user(self):
+    def user(self) -> Optional[User]:
         """Информация о клиенте"""
         return self.__user
 
     @user.setter
-    def user(self, value):
+    def user(self, value: Optional[User]):
         """Информация о клиенте"""
         self.__user = value
 
     @property
-    def start(self):
+    def start(self) -> Optional[datetime]:
         """Дата и время начала резервирования"""
         if not (self.__start_date and self.__start_time):
             return None
@@ -89,37 +102,34 @@ class Reserve:
         return datetime.combine(self.__start_date, self.__start_time)
 
     @start.setter
-    def start(self, value):
+    def start(self, value: Optional[datetime]):
         self.__start_date = value.date()
         self.__start_time = value.time()
 
     @property
-    def start_date(self):
+    def start_date(self) -> Optional[date]:
         """Дата время начала резервирования"""
         return self.__start_date
 
     @start_date.setter
-    def start_date(self, value):
+    def start_date(self, value: Optional[date]):
         """Дата время начала резервирования"""
         self.__start_date = value
 
     @property
-    def start_time(self):
-        """Время начала резервирования"""
+    def start_time(self) -> Optional[time]:
         return self.__start_time
 
     @start_time.setter
-    def start_time(self, value):
-        """Время начала резервирования"""
+    def start_time(self, value: Optional[time]):
         self.__start_time = value
 
     @property
-    def minutes(self):
-        """Время начала резервирования"""
+    def minutes(self) -> int:
         return self.set_type.minutes * self.set_count
 
     @property
-    def end(self):
+    def end(self) -> Optional[datetime]:
         """Дата и время окончания резервирования"""
         result = None
         if self.is_complete:
@@ -129,8 +139,7 @@ class Reserve:
         return result
 
     @property
-    def end_date(self):
-        """Дата окончания резервирования"""
+    def end_date(self) -> Optional[date]:
         result = None
         if self.is_complete:
             result = datetime.combine(self.__start_date, self.__start_time)
@@ -140,8 +149,7 @@ class Reserve:
         return result
 
     @property
-    def end_time(self):
-        """Время окончания резервирования"""
+    def end_time(self) -> Optional[time]:
         result = None
         if self.__start_date and self.__start_time and self.minutes:
             result = datetime.combine(self.__start_date, self.__start_time)
@@ -150,7 +158,8 @@ class Reserve:
 
         return result
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Provide built-in mapping to string"""
         if not self.is_complete:
             return ""
         elif self.start_date == self.end_date:
@@ -163,7 +172,8 @@ class Reserve:
         else:
             raise Exception
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
+        """Provide built-in comparation to other reserve instance"""
         if (self.start_date == other.start_date
            and self.set_count == other.set_count
            and self.minutes == other.minutes):

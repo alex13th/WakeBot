@@ -6,6 +6,7 @@ from aiogram.dispatcher import Dispatcher
 from wakebot.adapters.state import StateManager
 from wakebot.processors.reserve import ReserveProcessor
 from ..entities.user import User
+from typing import Union
 from ..entities.wake import Wake
 
 
@@ -13,17 +14,23 @@ class WakeProcessor(ReserveProcessor):
     """Proceed a wake reservaion process
 
     Attributes:
-        strings:
-            A locale strings class
+        dispatcher:
+            A telegram bot dispatcher instance instance.
         state_manager:
             A state manager class instance
+        strings:
+            A locale strings class
+        book_handlers:
+            A dictionary of book menu handlers.
+            A key matches InlineKeyboardButton.data value of book menu.
+            A value must contain handler function - f().
     """
 
     def __init__(self,
                  dispatcher: Dispatcher,
                  state_manager: StateManager,
-                 strings,
-                 state_type="wake",
+                 strings: any,
+                 state_type: Union[str, int, None] = "wake",
                  parse_mode=ParseMode.MARKDOWN):
         """Initialize a class instance
 
@@ -47,7 +54,8 @@ class WakeProcessor(ReserveProcessor):
         dispatcher.register_message_handler(self.cmd_wake, commands=["wake"])
 
     async def cmd_wake(self, message: Message):
-        "Proceed /wake command"
+        """Proceed /wake command"""
+
         text, reply_markup, state, _ = self.create_main_message()
 
         answer = await message.answer(
@@ -67,10 +75,22 @@ class WakeProcessor(ReserveProcessor):
 
         state_manager.set_state(state_type="wake", state="main", data=reserve)
 
-    def create_main_text(self):
+    def create_main_text(self) -> str:
+        """Create a main menu text
+
+        Returns:
+            A message text.
+        """
+
         return self.strings.wake.hello_message
 
-    def create_book_text(self, show_contact=True):
+    def create_book_text(self, show_contact: bool = True) -> str:
+        """Create a book menu text
+
+        Returns:
+            A message text.
+        """
+
         reserve = self.state_manager.data
         result = (f"{self.strings.reserve.type_label} "
                   f"{self.strings.wake.wake_text}\n")
@@ -99,11 +119,20 @@ class WakeProcessor(ReserveProcessor):
 
         return result
 
-    def create_list_text(self):
+    def create_list_text(self) -> str:
+        """Create list menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
         return "Wake List menu message text"
 
-    def create_book_keyboard(self):
-        """Create book menu InlineKeyboardMarkup"""
+    def create_book_keyboard(self) -> InlineKeyboardMarkup:
+        """Create book menu InlineKeyboardMarkup
+
+        Returns:
+            A InlineKeyboardMarkup instance.
+        """
         result = InlineKeyboardMarkup(row_width=1)
 
         # Adding Date- and Time- buttons by a row for each
@@ -147,7 +176,13 @@ class WakeProcessor(ReserveProcessor):
 
         return result
 
-    def create_reserve(self, message):
+    def create_reserve(self, message: Message) -> Wake:
+        """Create new Reserve instance
+        An update_state method call this when state hasn't an reservation data.
+
+        Returns:
+            An Wake class or child class instance .
+        """
         result = Wake()
 
         from_user = message.from_user
