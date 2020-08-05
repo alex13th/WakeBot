@@ -1,5 +1,5 @@
-
 # -*- coding: utf-8 -*-
+from typing import Union, Optional
 from wakebot.adapters.data import BaseDataAdapter
 
 
@@ -17,8 +17,16 @@ class StateManager:
             A current state
     """
 
-    def __init__(self, data_adapter: BaseDataAdapter,
-                 chat_id, user_id, message_id=None):
+    __data_adapter: BaseDataAdapter
+    __state_type: Union[str, int]
+    __state: Union[str, int]
+    __data: any
+
+    def __init__(self,
+                 data_adapter: BaseDataAdapter,
+                 chat_id: Optional[int] = None,
+                 user_id: Optional[int] = None,
+                 message_id: Optional[int] = None):
         """Initialize StateManager object
 
         Args:
@@ -31,14 +39,11 @@ class StateManager:
                 Optinal. An int or str a telegramm message Id
         """
         self.__data_adapter = data_adapter
-        self.__chat_id = chat_id
-        self.__user_id = user_id
-        self.__message_id = message_id
         self.__state_type = ""
         self.__state = ""
         self.__data = None
 
-        self.get_state()
+        self.get_state(chat_id, user_id, message_id)
 
     @property
     def data_adapter(self):
@@ -60,15 +65,36 @@ class StateManager:
     def state(self):
         return self.__state
 
-    def get_state(self):
-        """Get current state from data adapter """
-        state_data = self.__data_adapter.get_data_by_keys(key=self.state_id)
-        if state_data:
-            self.__state_type = state_data["state_type"]
-            self.__state = state_data["state"]
+    @property
+    def data(self):
+        return self.__data
 
-    def set_state(self, state=None, state_type=None,
-                  message_id=None, data=None):
+    def get_state(self,
+                  chat_id: int,
+                  user_id: int,
+                  message_id: Optional[int] = None):
+        """Get current state from data adapter """
+        self.__chat_id = chat_id
+        self.__user_id = user_id
+        self.__message_id = message_id
+
+        if chat_id and user_id:
+            state_data: dict = self.__data_adapter.get_data_by_keys(
+                key=self.state_id)
+            if state_data:
+                self.__state_type = state_data["state_type"]
+                self.__state = state_data["state"]
+                self.__data = state_data.get("data", None)
+            else:
+                self.__state_type = ""
+                self.__state = ""
+                self.__data = None
+
+    def set_state(self,
+                  state: Optional[Union[str, int]] = None,
+                  state_type: Optional[Union[str, int]] = None,
+                  message_id: Optional[int] = None,
+                  data: Optional[any] = None):
         """Set current state to data adapter
 
             Args:
@@ -79,22 +105,186 @@ class StateManager:
                 message_id:
                     Optional. A string type of state
                 data:
-                    Optional. A dictionary that contain a state data
+                    Optional. A dictionary that contains a state data
         """
-        self.__state = state if state else self.__state
-        self.__state_type = state_type if state_type else self.__state_type
-        self.__message_id = message_id if message_id else self.__message_id
-        self.__data = data if data else self.__data
+        self.__state = state or self.__state
+        self.__state_type = state_type or self.__state_type
+        self.__message_id = message_id or self.__message_id
+        self.__data = data or self.__data
 
         state_data = {}
         state_data["state"] = self.__state
         state_data["state_type"] = self.__state_type
 
-        if not (self.__data is None):
+        if self.__data:
             state_data["data"] = self.__data
 
         self.data_adapter.update_data(self.state_id, state_data)
 
+    def set_data(self, data: any):
+        """Set state data
+
+            Args:
+                data:
+                    A dictionary that contains a state data
+        """
+        self.__data = data
+
     def finish(self):
-        """Remove current state"""
-        pass
+        """Remove current state from storage"""
+        self.__data_adapter.remove_data_by_keys(self.state_id)
+
+
+class StateProvider:
+    """Provide state filter
+
+    Attributes:
+        data_adapter:
+            A data adapter of a state storage
+    """
+    def __init__(self, data_adapter=None):
+        """Initialize StateProvider object
+
+        Args:
+            data_adapter:
+                Optional. A data adapter object of a state storage
+        """
+        self.__data_adapter = data_adapter
+        self.__state_manager = StateManager(data_adapter)
+
+    @property
+    def data_adapter(self):
+        return self.__data_adapter
+
+    @data_adapter.setter
+    def data_adapter(self, value):
+        self.__data_adapter = value
+        self.__state_manager = StateManager(value)
+
+    def message_state(self, state_type="*", state="*"):
+        """Decorator state type and(or) state filter for message function
+
+            Args:
+                state_type:
+                    Optional. A string state type filter:
+                        "*" - any state type
+                        "" - state type has no value filter
+                state:
+                    Optional. A string state filter:
+                        "*" - any state
+                        "" - state has no value filter
+        """
+        def decorator(top_cls, message_handler=None):
+            if not message_handler:
+                message_handler = top_cls
+
+            async def message_decorator(cls, message=None):
+                if message:
+                    self.update_state_manager(message)
+                    if state_type == "*" and state == "*":
+                        await message_handler(cls, message,
+                                              self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await message_handler(cls, message,
+                                              self.__state_manager)
+                else:
+                    message = cls
+                    self.update_state_manager(message)
+                    if state_type == "*" and state == "*":
+                        await message_handler(message, self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await message_handler(message, self.__state_manager)
+
+            return message_decorator
+        return decorator
+
+    def callback_query_state(self, state_type="*", state="*"):
+        """Set state type and(or) state filter for callback_query function
+
+            Args:
+                state_type:
+                    Optional. A string state type filter:
+                        "*" - any state type
+                        "" - state type has no value filter
+                state:
+                    Optional. A string state filter:
+                        "*" - any state
+                        "" - state has no value filter
+        """
+        def decorator(top_cls, callback_query_handler=None):
+            if not callback_query_handler:
+                callback_query_handler = top_cls
+
+            async def callback_query_decorator(cls, callback_query=None):
+                if callback_query_handler:
+                    message = callback_query.message
+
+                    self.update_state_manager(message)
+
+                    if state_type == "*" and state == "*":
+                        await callback_query_handler(cls, callback_query,
+                                                     self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await callback_query_handler(cls, callback_query,
+                                                     self.__state_manager)
+                else:
+                    callback_query = cls
+                    message = callback_query.message
+
+                    self.update_state_manager(message)
+
+                    if state_type == "*" and state == "*":
+                        await callback_query_handler(cls, callback_query,
+                                                     self.__state_manager)
+                        return
+
+                    if self.check_filter(state_type, state, message):
+                        await callback_query_handler(cls, callback_query,
+                                                     self.__state_manager)
+
+            return callback_query_decorator
+        return decorator
+
+    def check_filter(self, state_type, state, message):
+        """Check message is matched filter
+
+            Args:
+                state_type:
+                    A string state type filter:
+                        "*" - any state type
+                        "" - state type has no value filter
+                state:
+                    A string state filter:
+                        "*" - any state
+                        "" - state has no value filter
+                message:
+                    A message to check matching
+        """
+        current_state_type = self.__state_manager.state_type
+        current_state = self.__state_manager.state
+
+        result = (state_type == current_state_type
+                  and state == current_state)
+        result = (result or
+                  (state_type == "*" and state == current_state))
+        result = (result or
+                  (state_type == current_state_type and state == "*"))
+
+        return result
+
+    def update_state_manager(self, message):
+        """Update state manager
+            Args:
+                state_type:
+                    A message object to get state
+        """
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        message_id = message.message_id
+        self.__state_manager.get_state(chat_id, user_id, message_id)

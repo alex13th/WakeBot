@@ -12,7 +12,7 @@ class BaseDataAdapter:
         return NotImplementedError
 
     def get_data_by_keys(self, **kwargs) -> iter:
-        """Get a set of data  from storage by a keys
+        """Get a set of data from storage by a keys
 
         Args:
             **kwargs:
@@ -41,6 +41,18 @@ class BaseDataAdapter:
         """
         return NotImplementedError
 
+    def remove_data_by_keys(self, **kwargs) -> iter:
+        """Remove data from storage by a keys
+
+        Args:
+            **kwargs:
+                A custom set of arguments (defined by child class)
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
 
 class MemoryDataAdapter(BaseDataAdapter):
     """A memory data adapter
@@ -51,6 +63,7 @@ class MemoryDataAdapter(BaseDataAdapter):
         storage:
             A dictionary of a stored data
     """
+    __storage: dict
 
     def __init__(self):
         self.__storage = {}
@@ -59,7 +72,7 @@ class MemoryDataAdapter(BaseDataAdapter):
     def storage(self):
         return self.__storage
 
-    def get_data(self):
+    def get_data(self) -> iter:
         """Get a full set of data from storage
 
         Returns:
@@ -67,7 +80,7 @@ class MemoryDataAdapter(BaseDataAdapter):
         """
         return self.__storage.copy()
 
-    def get_data_by_keys(self, key) -> iter:
+    def get_data_by_keys(self, key: str):
         """Get a set of data  from storage by a keys
 
         Args:
@@ -75,7 +88,7 @@ class MemoryDataAdapter(BaseDataAdapter):
                 A custom set of arguments (defined by child class)
 
         Returns:
-            A iterator object of given data
+            A object of given data
         """
         try:
             data = self.__storage[key]
@@ -84,7 +97,7 @@ class MemoryDataAdapter(BaseDataAdapter):
 
         return data
 
-    def append_data(self, key, data):
+    def append_data(self, key: str, data):
         """Append new data to storage
 
         Args:
@@ -95,7 +108,7 @@ class MemoryDataAdapter(BaseDataAdapter):
         """
         self.__storage[key] = data
 
-    def update_data(self, key, data):
+    def update_data(self, key: str, data):
         """Append new data to storage
 
         Args:
@@ -105,3 +118,15 @@ class MemoryDataAdapter(BaseDataAdapter):
                 A dictionary of a data to append to storage
         """
         self.__storage[key] = data
+
+    def remove_data_by_keys(self, key: str):
+        """Remove data from storage by a keys
+
+        Args:
+            key:
+                A string or integer key value
+
+        Returns:
+            A iterator object of given data
+        """
+        del self.__storage[key]

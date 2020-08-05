@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-from mocks.aiogram import Dispatcher
+from .mocks.aiogram import Dispatcher
 from aiogram.types import Chat, User
 from aiogram.types import Contact, CallbackQuery, Message
 from wakebot.chatprovider import ChatProvider
@@ -241,7 +241,8 @@ class ChatProviderTestCase(unittest.TestCase):
         self.message_result = "reserve-message1"
 
 
-try:
-    unittest.main()
-except SystemExit:
-    pass
+if __name__ == "__main__":
+    try:
+        unittest.main()
+    except SystemExit:
+        pass
