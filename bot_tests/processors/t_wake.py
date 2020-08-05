@@ -45,7 +45,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         set_button = InlineKeyboardButton(self.strings.wake.set_button,
                                           callback_data='set')
         hour_button = InlineKeyboardButton(self.strings.wake.hour_button,
-                                           callback_data='hour')
+                                           callback_data='set_hour')
         result.row(set_button, hour_button)
 
         # Adding Board- and Hydro- buttons in one row
@@ -159,6 +159,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         checked = self.processor.check_filter(callback.message, "wake", "main")
         passed, message = self.assert_params(checked, True)
+        assert passed, message
 
         await self.processor.callback_main(callback)
 
@@ -171,10 +172,11 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         callback.data = "date"
         reply_markup = self.create_date_keyboard()
         state_key = "101-111-121"
-        self.append_state(state_key, "wake", "main")
+        self.append_state(state_key, "wake", "book")
 
         checked = self.processor.check_filter(callback.message, "wake", "book")
         passed, message = self.assert_params(checked, True)
+        assert passed, message
 
         await self.processor.callback_book(callback)
 

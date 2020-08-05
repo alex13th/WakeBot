@@ -10,7 +10,7 @@ from aiogram.types import KeyboardButton, InlineKeyboardButton
 from wakebot.adapters.state import StateManager
 from wakebot.processors.common import StatedProcessor
 from ..entities.user import User
-from ..entities.reserve import Reserve
+from ..entities.reserve import Reserve, ReserveSetType
 
 
 class ReserveProcessor(StatedProcessor):
@@ -28,6 +28,9 @@ class ReserveProcessor(StatedProcessor):
             A key matches InlineKeyboardButton.data value of book menu.
             A value must contain handler function - f().
     """
+
+    book_handlers: dict
+    reserve_set_types: dict
 
     def __init__(self,
                  dispatcher: Dispatcher,
@@ -54,12 +57,19 @@ class ReserveProcessor(StatedProcessor):
         super().__init__(dispatcher, state_manager, state_type, parse_mode)
         self.strings = strings
 
+        self.reserve_set_types = {}
+        self.reserve_set_types["set"] = ReserveSetType("set", 5)
+        self.reserve_set_types["hour"] = ReserveSetType("hour", 60)
+
         self.register_callback_query_handler(self.callback_main, "main")
         self.register_callback_query_handler(self.callback_list, "list")
         self.register_callback_query_handler(self.callback_book, "book")
         self.register_callback_query_handler(self.callback_date, "date")
         self.register_callback_query_handler(self.callback_hour, "hour")
         self.register_callback_query_handler(self.callback_minute, "minute")
+        self.register_callback_query_handler(self.callback_set, "set")
+        self.register_callback_query_handler(self.callback_set_hour,
+                                             "set_hour")
         self.register_message_handler(self.message_phone, state="phone")
 
         self.book_handlers = {}
@@ -67,6 +77,8 @@ class ReserveProcessor(StatedProcessor):
         self.book_handlers["date"] = self.book_date
         self.book_handlers["time"] = self.book_time
         self.book_handlers["phone"] = self.book_phone
+        self.book_handlers["set"] = self.book_set
+        self.book_handlers["set_hour"] = self.book_set_hour
 
     async def message_phone(self, message: Message):
         """Phone number reply message handler"""
@@ -197,6 +209,52 @@ class ReserveProcessor(StatedProcessor):
         state_manager.set_state(state=state)
         await callback_query.answer(answer)
 
+    async def callback_set(self, callback_query: CallbackQuery):
+        """Set menu CallbackQuery handler"""
+        # State manager updated by StatedProcessor check_filter method
+
+        text = reply_markup = state = None
+        state_manager = self.state_manager
+
+        if callback_query.data == "back":
+            text, reply_markup, state, answer = self.create_book_message()
+        elif callback_query.data.isdigit():
+            self.state_manager.data.set_count = int(callback_query.data)
+            self.state_manager.data.set_type = self.reserve_set_types["set"]
+            text, reply_markup, state, answer = self.create_book_message()
+        else:
+            await callback_query.answer(self.strings.callback_error)
+            return
+
+        await callback_query.message.edit_text(text,
+                                               reply_markup=reply_markup,
+                                               parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
+
+    async def callback_set_hour(self, callback_query: CallbackQuery):
+        """Set Hour menu CallbackQuery handler"""
+        # State manager updated by StatedProcessor check_filter method
+
+        text = reply_markup = state = None
+        state_manager = self.state_manager
+
+        if callback_query.data == "back":
+            text, reply_markup, state, answer = self.create_book_message()
+        elif callback_query.data.isdigit():
+            self.state_manager.data.set_count = int(callback_query.data)
+            self.state_manager.data.set_type = self.reserve_set_types["hour"]
+            text, reply_markup, state, answer = self.create_book_message()
+        else:
+            await callback_query.answer(self.strings.callback_error)
+            return
+
+        await callback_query.message.edit_text(text,
+                                               reply_markup=reply_markup,
+                                               parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
+
     async def callback_list(self, callback_query: CallbackQuery):
         """List menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
@@ -230,6 +288,16 @@ class ReserveProcessor(StatedProcessor):
         """Proceed Time button in Book menu"""
         await self.callback_query_action(callback_query,
                                          *self.create_hour_message())
+
+    async def book_set(self, callback_query: CallbackQuery):
+        """Proceed Set button in Book menu"""
+        await self.callback_query_action(callback_query,
+                                         *self.create_set_message())
+
+    async def book_set_hour(self, callback_query: CallbackQuery):
+        """Proceed Set Hour button in Book menu"""
+        await self.callback_query_action(callback_query,
+                                         *self.create_set_hour_message())
 
     async def book_phone(self, callback_query: CallbackQuery):
         """Proceed Phone button in Book menu"""
@@ -398,6 +466,46 @@ class ReserveProcessor(StatedProcessor):
         reply_markup = self.create_minute_keyboard()
         state = "minute"
         answer = text
+
+        return (text, reply_markup, state, answer)
+
+    def create_set_message(self):
+        """Prepare a Set menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
+        text = self.create_book_text()
+        reply_markup = self.create_count_keyboard(6)
+        state = "set"
+        answer = self.strings.reserve.set_button_callback
+
+        return (text, reply_markup, state, answer)
+
+    def create_set_hour_message(self):
+        """Prepare a Set Hour menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
+        text = self.create_book_text()
+        reply_markup = self.create_count_keyboard(6)
+        state = "set_hour"
+        answer = self.strings.reserve.set_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -603,6 +711,28 @@ class ReserveProcessor(StatedProcessor):
 
         buttons = [InlineKeyboardButton(f"{i}", callback_data=str(i))
                    for i in range(0, 60, step)]
+
+        result.add(*buttons)
+        button = InlineKeyboardButton(self.strings.back_button,
+                                      callback_data='back')
+        result.add(button)
+
+        return result
+
+    def create_count_keyboard(self, count: int, row_width: int = 6):
+        """Create Count InlineKeyboardMarkup
+
+        Args:
+            count:
+                An integer value of buttons count
+            row_width:
+                An integer value of a maximum buttons per row
+        """
+
+        result = InlineKeyboardMarkup(row_width=row_width)
+
+        buttons = [InlineKeyboardButton(f"{i}", callback_data=str(i))
+                   for i in range(1, count + 1)]
 
         result.add(*buttons)
         button = InlineKeyboardButton(self.strings.back_button,

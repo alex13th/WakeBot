@@ -7,7 +7,7 @@ from wakebot.adapters.state import StateManager
 from wakebot.processors.reserve import ReserveProcessor
 from ..entities.user import User
 from typing import Union
-from ..entities.wake import Wake
+from ..entities.wake import Wake, ReserveSetType
 
 
 class WakeProcessor(ReserveProcessor):
@@ -50,6 +50,8 @@ class WakeProcessor(ReserveProcessor):
         """
         super().__init__(dispatcher, state_manager, strings,
                          state_type=state_type, parse_mode=parse_mode)
+
+        self.reserve_set_types["set"] = ReserveSetType("set", 10)
 
         dispatcher.register_message_handler(self.cmd_wake, commands=["wake"])
 
@@ -147,7 +149,7 @@ class WakeProcessor(ReserveProcessor):
         set_button = InlineKeyboardButton(self.strings.wake.set_button,
                                           callback_data='set')
         hour_button = InlineKeyboardButton(self.strings.wake.hour_button,
-                                           callback_data='hour')
+                                           callback_data='set_hour')
         result.row(set_button, hour_button)
 
         # Adding Board- and Hydro- buttons in one row

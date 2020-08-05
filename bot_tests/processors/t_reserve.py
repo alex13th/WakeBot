@@ -214,6 +214,21 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         return result
 
+    def create_count_keyboard(self, count, row_width=6):
+        """Create Hour menu InlineKeyboardMarkup"""
+
+        result = InlineKeyboardMarkup(row_width=row_width)
+
+        buttons = [InlineKeyboardButton(f"{i}", callback_data=str(i))
+                   for i in range(1, count + 1)]
+
+        result.add(*buttons)
+        button = InlineKeyboardButton(self.strings.back_button,
+                                      callback_data='back')
+        result.add(button)
+
+        return result
+
     async def test_callback_main_book(self):
         """Proceed press Book button in Main menu"""
         callback = self.test_callback_query
@@ -435,6 +450,128 @@ class ReserveProcessorTestCase(BaseTestCase):
         assert passed, alert
 
         reply_markup = self.create_book_keyboard()
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "reserve", "book")
+
+    async def test_callback_book_set(self):
+        """Proceed press Set button in Book menu"""
+        callback = self.test_callback_query
+        callback.data = "set"
+        reply_markup = self.create_count_keyboard(6)
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "book")
+
+        checked = self.processor.check_filter(callback.message, "wake", "book")
+        passed, message = self.assert_params(checked, True)
+        assert passed, message
+
+        await self.processor.callback_book(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "set")
+
+    async def test_callback_set_back(self):
+        """Proceed press Back button in Set menu"""
+        callback = self.test_callback_query
+        callback.data = "back"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "set")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "set")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_set(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "reserve", "book")
+
+    async def test_callback_set_count(self):
+        """Proceed select Count in Set menu"""
+        callback = self.test_callback_query
+        callback.data = "3"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "set")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "set")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_set(callback)
+
+        reserve = self.state_manager.data
+
+        passed, alert = self.assert_params(3, reserve.set_count)
+        assert passed, alert
+
+        passed, alert = self.assert_params("set", reserve.set_type.set_id)
+        assert passed, alert
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "reserve", "book")
+
+    async def test_callback_book_set_hour(self):
+        """Proceed press Set Hour button in Book menu"""
+        callback = self.test_callback_query
+        callback.data = "set_hour"
+        reply_markup = self.create_count_keyboard(6)
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "book")
+
+        checked = self.processor.check_filter(callback.message, "wake", "book")
+        passed, message = self.assert_params(checked, True)
+        assert passed, message
+
+        await self.processor.callback_book(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "set_hour")
+
+    async def test_callback_set_hour_back(self):
+        """Proceed press Back button in Set Hour menu"""
+        callback = self.test_callback_query
+        callback.data = "back"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "set_hour")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "set_hour")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_set_hour(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "reserve", "book")
+
+    async def test_callback_set_hour_count(self):
+        """Proceed select Count in Set Hour menu"""
+        callback = self.test_callback_query
+        callback.data = "2"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "set_hour")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "set_hour")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_set_hour(callback)
+
+        reserve = self.state_manager.data
+
+        passed, alert = self.assert_params(2, reserve.set_count)
+        assert passed, alert
+
+        passed, alert = self.assert_params("hour", reserve.set_type.set_id)
+        assert passed, alert
+
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "reserve", "book")
 
