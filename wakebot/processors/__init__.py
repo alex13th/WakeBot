@@ -57,6 +57,9 @@ class RuWake:
     icon_hour = "\u23f0"
     hour_button = f"{icon_hour} Час"
 
+    options_text = "Опции"
+    options_label = f"*{options_text}:*"
+
     icon_board = "🏄‍♂️"
     wake_text = "Вейкборд"
     board_button = f"{icon_board} {wake_text}"

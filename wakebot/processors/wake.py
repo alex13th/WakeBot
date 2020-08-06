@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from aiogram.types import Message, ParseMode
+from aiogram.types import Message, CallbackQuery, ParseMode
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher import Dispatcher
 
@@ -54,6 +54,10 @@ class WakeProcessor(ReserveProcessor):
         self.reserve_set_types["set"] = ReserveSetType("set", 10)
 
         dispatcher.register_message_handler(self.cmd_wake, commands=["wake"])
+        self.register_callback_query_handler(self.callback_board, "board")
+        self.register_callback_query_handler(self.callback_hydro, "hydro")
+        self.book_handlers["board"] = self.book_board
+        self.book_handlers["hydro"] = self.book_hydro
 
     async def cmd_wake(self, message: Message):
         """Proceed /wake command"""
@@ -76,6 +80,100 @@ class WakeProcessor(ReserveProcessor):
         reserve.user = user
 
         state_manager.set_state(state_type="wake", state="main", data=reserve)
+
+    async def callback_board(self, callback_query: CallbackQuery):
+        """Board menu CallbackQuery handler"""
+        # State manager updated by StatedProcessor check_filter method
+
+        text = reply_markup = state = None
+        state_manager = self.state_manager
+
+        if callback_query.data == "back":
+            text, reply_markup, state, answer = self.create_book_message()
+        elif callback_query.data.isdigit():
+            self.state_manager.data.board = int(callback_query.data)
+            text, reply_markup, state, answer = self.create_book_message()
+        else:
+            await callback_query.answer(self.strings.callback_error)
+            return
+
+        await callback_query.message.edit_text(text,
+                                               reply_markup=reply_markup,
+                                               parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
+
+    async def book_board(self, callback_query: CallbackQuery):
+        """Proceed Board button in Book menu"""
+        await self.callback_query_action(callback_query,
+                                         *self.create_board_message())
+
+    def create_board_message(self):
+        """Prepare a Board menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
+        text = self.create_book_text()
+        reply_markup = self.create_count_keyboard(start=0, count=3)
+        state = "board"
+        answer = self.strings.reserve.set_button_callback
+
+        return (text, reply_markup, state, answer)
+
+    async def callback_hydro(self, callback_query: CallbackQuery):
+        """Hydro menu CallbackQuery handler"""
+        # State manager updated by StatedProcessor check_filter method
+
+        text = reply_markup = state = None
+        state_manager = self.state_manager
+
+        if callback_query.data == "back":
+            text, reply_markup, state, answer = self.create_book_message()
+        elif callback_query.data.isdigit():
+            self.state_manager.data.hydro = int(callback_query.data)
+            text, reply_markup, state, answer = self.create_book_message()
+        else:
+            await callback_query.answer(self.strings.callback_error)
+            return
+
+        await callback_query.message.edit_text(text,
+                                               reply_markup=reply_markup,
+                                               parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
+
+    async def book_hydro(self, callback_query: CallbackQuery):
+        """Proceed Board button in Book menu"""
+        await self.callback_query_action(callback_query,
+                                         *self.create_hydro_message())
+
+    def create_hydro_message(self):
+        """Prepare a Board menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
+        text = self.create_book_text()
+        reply_markup = self.create_count_keyboard(start=0, count=3)
+        state = "hydro"
+        answer = self.strings.reserve.set_button_callback
+
+        return (text, reply_markup, state, answer)
 
     def create_main_text(self) -> str:
         """Create a main menu text
@@ -119,6 +217,14 @@ class WakeProcessor(ReserveProcessor):
                    f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
+        if reserve.board or reserve.hydro:
+            result += self.strings.wake.options_label
+
+        result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+                   if reserve.board else "")
+        result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+                   if reserve.hydro else "")
+
         return result
 
     def create_list_text(self) -> str:
@@ -154,7 +260,7 @@ class WakeProcessor(ReserveProcessor):
 
         # Adding Board- and Hydro- buttons in one row
         set_button = InlineKeyboardButton(self.strings.wake.board_button,
-                                          callback_data='wake')
+                                          callback_data='board')
         hour_button = InlineKeyboardButton(self.strings.wake.hydro_button,
                                            callback_data='hydro')
         result.row(set_button, hour_button)

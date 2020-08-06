@@ -50,7 +50,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         # Adding Board- and Hydro- buttons in one row
         set_button = InlineKeyboardButton(self.strings.wake.board_button,
-                                          callback_data='wake')
+                                          callback_data='board')
         hour_button = InlineKeyboardButton(self.strings.wake.hydro_button,
                                            callback_data='hydro')
         result.row(set_button, hour_button)
@@ -103,6 +103,14 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         result += (f"{self.strings.reserve.set_type_label} "
                    f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
+
+        if reserve.board or reserve.hydro:
+            result += self.strings.wake.options_label
+
+        result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+                   if reserve.board else "")
+        result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+                   if reserve.hydro else "")
 
         return result
 
@@ -182,6 +190,124 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "wake", "date")
+
+    async def test_callback_book_board(self):
+        """Proceed press Board button in Book menu"""
+        callback = self.test_callback_query
+        callback.data = "board"
+        reply_markup = self.create_count_keyboard(start=0, count=3)
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "book")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "book")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_book(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "board")
+
+    async def test_callback_board_back(self):
+        """Proceed press Back button in Board menu"""
+        callback = self.test_callback_query
+        callback.data = "back"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "board")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "board")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_board(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "book")
+
+    async def test_callback_board_count(self):
+        """Proceed select Count in Board menu"""
+        callback = self.test_callback_query
+        callback.data = "2"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "board")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "board")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_board(callback)
+
+        reserve = self.state_manager.data
+
+        passed, alert = self.assert_params(2, reserve.board)
+        assert passed, alert
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "book")
+
+    async def test_callback_book_hydro(self):
+        """Proceed press Hydro button in Book menu"""
+        callback = self.test_callback_query
+        callback.data = "hydro"
+        reply_markup = self.create_count_keyboard(start=0, count=3)
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "book")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "book")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_book(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "hydro")
+
+    async def test_callback_hydro_back(self):
+        """Proceed press Back button in Hydro menu"""
+        callback = self.test_callback_query
+        callback.data = "back"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "hydro")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "hydro")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_hydro(callback)
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "book")
+
+    async def test_callback_hydro_count(self):
+        """Proceed select Count in Hydro menu"""
+        callback = self.test_callback_query
+        callback.data = "3"
+        reply_markup = self.create_book_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "hydro")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "hydro")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_hydro(callback)
+
+        reserve = self.state_manager.data
+
+        passed, alert = self.assert_params(3, reserve.hydro)
+        assert passed, alert
+
+        self.check_state(state_key, self.create_book_text(),
+                         reply_markup, "wake", "book")
 
 
 if __name__ == "__main__":

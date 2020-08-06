@@ -214,13 +214,14 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         return result
 
-    def create_count_keyboard(self, count, row_width=6):
+    def create_count_keyboard(self, count: int, start: int = 1,
+                              row_width: int = 6):
         """Create Hour menu InlineKeyboardMarkup"""
 
         result = InlineKeyboardMarkup(row_width=row_width)
 
         buttons = [InlineKeyboardButton(f"{i}", callback_data=str(i))
-                   for i in range(1, count + 1)]
+                   for i in range(start, count + 1)]
 
         result.add(*buttons)
         button = InlineKeyboardButton(self.strings.back_button,

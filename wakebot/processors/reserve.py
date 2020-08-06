@@ -719,7 +719,8 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_count_keyboard(self, count: int, row_width: int = 6):
+    def create_count_keyboard(self, count: int, start: int = 1,
+                              row_width: int = 6):
         """Create Count InlineKeyboardMarkup
 
         Args:
@@ -732,7 +733,7 @@ class ReserveProcessor(StatedProcessor):
         result = InlineKeyboardMarkup(row_width=row_width)
 
         buttons = [InlineKeyboardButton(f"{i}", callback_data=str(i))
-                   for i in range(1, count + 1)]
+                   for i in range(start, count + 1)]
 
         result.add(*buttons)
         button = InlineKeyboardButton(self.strings.back_button,
