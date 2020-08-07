@@ -38,8 +38,9 @@ class Wake(Reserve):
                  user: Optional[User] = None,
                  start_date: Optional[date] = None,
                  start_time: Optional[time] = None,
-                 set_type: Union[str, int, None] = None,
-                 set_count: Optional[int] = 1,
+                 set_type_id: str = "set",
+                 set_count: int = 1,
+                 id: Union[int, None] = None,
                  board: Optional[int] = 0,
                  hydro: Optional[int] = 0):
         """Wakeboard reservation data class
@@ -48,27 +49,48 @@ class Wake(Reserve):
             user:
                 Optional. A instance of User class object.
             start_date:
-                Optional. Reservation start date only.
+                Optional. Wakeboard reservation start date only.
             start_time:
-                Optional. Reservation start time only.
+                Optional. Wakeboard reservation start time only.
             set_type:
                 A reservation set type instances.
             set_count:
                 A integer value of set's count.
+            id:
+                An integer wakeboard reservation identifier
             boad:
                 An integer value of a wakeboard equipment rent need
             hydro:
                 An integer value of a hydrosuite equipment rent need
+            id:
+                An integer wakeboard reservation identifier
         """
-        if not set_type:
-            set_type = ReserveSetType("set", 10)
+        super().__init__(user=user,
+                         start_date=start_date, start_time=start_time,
+                         set_type_id=set_type_id, set_count=set_count, id=id)
 
-        super().__init__(user, start_date, start_time, set_type, set_count)
+        if set_type_id == "set":
+            self.set_type = ReserveSetType(set_type_id, 10)
+        elif set_type_id == "hour":
+            self.set_type = ReserveSetType(set_type_id, 60)
+        else:
+            raise ValueError
+
         self.board = board
         self.hydro = hydro
 
+    def __copy__(self):
+        return Wake(self.user, self.start_date, self.start_time,
+                    self.set_type.set_id, self.set_count, self.id,
+                    self.board, self.hydro)
+
+    def __deepcopy__(self):
+        return Wake(self.user.__deepcopy__(),
+                    self.start_date, self.start_time,
+                    self.set_type.set_id, self.set_count, self.id,
+                    self.board, self.hydro)
+
     def __eq__(self, other) -> bool:
-        """Provide a built-in object comparation"""
         if (self.start_date == other.start_date
            and self.set_count == other.set_count
            and self.minutes == other.minutes

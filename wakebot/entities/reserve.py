@@ -37,6 +37,8 @@ class Reserve:
             An integer value of set's count.
         count:
             An integer value of count reservation pieces
+        id:
+            An integer wakeboard reservation identifier
     """
 
     user: Optional[User]
@@ -50,9 +52,9 @@ class Reserve:
                  user: Optional[User] = None,
                  start_date: Optional[date] = None,
                  start_time: Optional[time] = None,
-                 set_type: Union[str, int, None] = None,
-                 set_count: int = 1,
-                 count: int = 1):
+                 set_type_id: str = "set",
+                 set_count: int = 1, count: int = 1,
+                 id: Union[int, None] = None):
         """Reservation data class
 
         Args:
@@ -63,20 +65,27 @@ class Reserve:
             start_time:
                 Optional. Reservation start time only.
             set_type:
-                A reservation set type instances.
+                Optional. A reservation set type instances.
             set_count:
                 A integer value of set's count.
+            count:
+                A integer value of equipment count.
+            id:
+                Optional. An integer wakeboard reservation identifier
         """
-        if not set_type:
-            set_type = ReserveSetType("set", 5)
-        if not start_date:
-            start_date = date.today()
+        if set_type_id == "set":
+            self.set_type = ReserveSetType(set_type_id, 5)
+        elif set_type_id == "hour":
+            self.set_type = ReserveSetType(set_type_id, 60)
+        else:
+            raise ValueError
+
         self.__user = user
-        self.__start_date = start_date
+        self.__start_date = start_date if start_date else date.today()
         self.__start_time = start_time
-        self.set_type = set_type
         self.set_count = set_count
         self.count = count
+        self.id = id
 
     @property
     def is_complete(self) -> bool:
@@ -180,6 +189,15 @@ class Reserve:
             return True
         else:
             return False
+
+    def __copy__(self):
+        return Reserve(self.user, self.start_date, self.start_time,
+                       self.set_type.set_id, self.set_count, self.id)
+
+    def __deepcopy__(self):
+        return Reserve(self.user.__deepcopy__(),
+                       self.start_date, self.start_time,
+                       self.set_type.set_id, self.set_count, self.id)
 
 
 if __name__ == "__main__":

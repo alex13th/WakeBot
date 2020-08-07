@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
+from typing import Union
+from ..entities.wake import Wake
+
 
 class BaseDataAdapter:
     """A base class for a data adapters"""
 
-    def get_data(self):
+    def get_data(self) -> iter:
         """Get a full set of data from storage
 
         Returns:
@@ -11,7 +13,7 @@ class BaseDataAdapter:
         """
         return NotImplementedError
 
-    def get_data_by_keys(self, **kwargs) -> iter:
+    def get_data_by_keys(self, **kwargs) -> any:
         """Get a set of data from storage by a keys
 
         Args:
@@ -41,7 +43,7 @@ class BaseDataAdapter:
         """
         return NotImplementedError
 
-    def remove_data_by_keys(self, **kwargs) -> iter:
+    def remove_data_by_keys(self, **kwargs):
         """Remove data from storage by a keys
 
         Args:
@@ -130,3 +132,57 @@ class MemoryDataAdapter(BaseDataAdapter):
             A iterator object of given data
         """
         del self.__storage[key]
+
+
+class WakeDataAdapter:
+    """A base wakeboard reservation adapter class"""
+
+    def get_data(self) -> iter:
+        """Get a full set of data from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
+    def get_data_by_keys(self, id: int) -> Union[Wake, None]:
+        """Get a set of data from storage by a keys
+
+        Args:
+            id:
+                An identifier of wake reservation
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
+    def append_data(self, reserve: Wake) -> Wake:
+        """Append new data to storage
+
+        Args:
+            reserve:
+                An instance of entity wake class.
+        """
+        return NotImplementedError
+
+    def update_data(self, reserve: Wake):
+        """Append new data to storage
+
+        Args:
+            reserve:
+                An instance of entity wake class.
+        """
+        return NotImplementedError
+
+    def remove_data_by_keys(self, id: int):
+        """Remove data from storage by a keys
+
+        Args:
+            id:
+                An identifier of wake reservation
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError

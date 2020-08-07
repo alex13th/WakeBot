@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class User:
     """User data class
 
@@ -78,6 +79,14 @@ class User:
     @displayname.setter
     def displayname(self, value: Optional[str]):
         self._displayname = value
+
+    def __copy__(self):
+        return User(
+            self.firstname, self.lastname, self.middlename, self._displayname,
+            self.phone_number, self.telegram_id, self.user_id)
+
+    def __deepcopy__(self):
+        return self.__copy__()
 
     def __str__(self) -> str:
         """Provide built-in mapping to string"""
