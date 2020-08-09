@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
-from aiogram.types import Message, CallbackQuery, ParseMode
+from typing import Union
+from aiogram.types import Message, CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher import Dispatcher
 
-from wakebot.adapters.state import StateManager
-from wakebot.processors.reserve import ReserveProcessor
+from ..adapters.state import StateManager
+from .reserve import ReserveProcessor
 from ..entities.user import User
-from typing import Union
 from ..entities.wake import Wake, ReserveSetType
+from ..adapters.data import ReserveDataAdapter
 
 
 class WakeProcessor(ReserveProcessor):
@@ -20,6 +20,8 @@ class WakeProcessor(ReserveProcessor):
             A state manager class instance
         strings:
             A locale strings class
+        data_adapter:
+            A reservation storage data adapter
         book_handlers:
             A dictionary of book menu handlers.
             A key matches InlineKeyboardButton.data value of book menu.
@@ -30,8 +32,8 @@ class WakeProcessor(ReserveProcessor):
                  dispatcher: Dispatcher,
                  state_manager: StateManager,
                  strings: any,
-                 state_type: Union[str, int, None] = "wake",
-                 parse_mode=ParseMode.MARKDOWN):
+                 data_adapter: Union[ReserveDataAdapter, None] = None,
+                 state_type: Union[str, int, None] = "wake"):
         """Initialize a class instance
 
         Args:
@@ -41,6 +43,8 @@ class WakeProcessor(ReserveProcessor):
                 A state manager class instance
             strings:
                 A locale strings class.
+            data_adapter:
+                Optonal. A wake reservation storage data adapter
             state_type:
                 Optional, A default state type.
                 Default value: "wake"
@@ -48,14 +52,17 @@ class WakeProcessor(ReserveProcessor):
                 Optional. A parse mode of telegram messages (ParseMode).
                 Default value: aiogram.types.ParseMode.MARKDOWN
         """
-        super().__init__(dispatcher, state_manager, strings,
-                         state_type=state_type, parse_mode=parse_mode)
+        super().__init__(dispatcher, state_manager, strings, data_adapter,
+                         state_type=state_type)
 
         self.reserve_set_types["set"] = ReserveSetType("set", 10)
 
         dispatcher.register_message_handler(self.cmd_wake, commands=["wake"])
+
         self.register_callback_query_handler(self.callback_board, "board")
         self.register_callback_query_handler(self.callback_hydro, "hydro")
+
+        self.book_handlers["apply"] = self.book_apply
         self.book_handlers["board"] = self.book_board
         self.book_handlers["hydro"] = self.book_hydro
 
@@ -121,10 +128,10 @@ class WakeProcessor(ReserveProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_count_keyboard(start=0, count=3)
         state = "board"
-        answer = self.strings.reserve.set_button_callback
+        answer = self.strings.wake.board_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -168,10 +175,10 @@ class WakeProcessor(ReserveProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_count_keyboard(start=0, count=3)
         state = "hydro"
-        answer = self.strings.reserve.set_button_callback
+        answer = self.strings.wake.hydro_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -184,20 +191,28 @@ class WakeProcessor(ReserveProcessor):
 
         return self.strings.wake.hello_message
 
-    def create_book_text(self, show_contact: bool = True) -> str:
+    def create_book_text(self, check=True, show_contact: bool = False) -> str:
         """Create a book menu text
+        Args:
+            check:
+                Optional. A boolean value means to need check
+                concurrent reservations.
+            show_contact:
+                Optional. A boolean value means to allow
+                show contact information
 
         Returns:
             A message text.
         """
 
-        reserve = self.state_manager.data
+        reserve: Wake = self.state_manager.data
+
         result = (f"{self.strings.reserve.type_label} "
                   f"{self.strings.wake.wake_text}\n")
 
-        if reserve.user:
+        if reserve.user and show_contact:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
-            if show_contact and reserve.user.phone_number:
+            if reserve.user.phone_number:
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
@@ -219,7 +234,40 @@ class WakeProcessor(ReserveProcessor):
 
         if reserve.board or reserve.hydro:
             result += self.strings.wake.options_label
+            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+                       if reserve.board else "")
+            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+                       if reserve.hydro else "")
 
+        return result
+
+    def create_list_text(self) -> str:
+        """Create list menu"""
+
+        result = ""
+
+        rows = self.data_adapter.get_active_reserves()
+
+        cur_date = None
+
+        for reserve in rows:
+            if not cur_date or cur_date != reserve.start_date:
+                cur_date = reserve.start_date
+                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
+
+            result += self.create_reserve_text(reserve)
+            result += "\n"
+
+        if result:
+            return f"{self.strings.reserve.list_header}\n{result}"
+        else:
+            return self.strings.reserve.list_empty
+
+    def create_reserve_text(self, reserve: Wake) -> str:
+        result = ""
+        start_time = reserve.start_time.strftime(self.strings.time_format)
+        end_time = reserve.end_time.strftime(self.strings.time_format)
+        result += f"  {start_time} - {end_time}"
         result += (f" {self.strings.wake.icon_board}x{reserve.board}"
                    if reserve.board else "")
         result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
@@ -227,17 +275,11 @@ class WakeProcessor(ReserveProcessor):
 
         return result
 
-    def create_list_text(self) -> str:
-        """Create list menu InlineKeyboardMarkup
-
-        Returns:
-            A InlineKeyboardMarkup instance.
-        """
-        return "Wake List menu message text"
-
-    def create_book_keyboard(self) -> InlineKeyboardMarkup:
+    def create_book_keyboard(self, ready=False) -> InlineKeyboardMarkup:
         """Create book menu InlineKeyboardMarkup
-
+        Args:
+            ready:
+                Ready to apply reservation flag.
         Returns:
             A InlineKeyboardMarkup instance.
         """
@@ -270,8 +312,7 @@ class WakeProcessor(ReserveProcessor):
         result.add(button)
 
         if self.state_manager.data:
-            reserve: Wake = self.state_manager.data
-            if reserve.is_complete:
+            if ready:
                 button = InlineKeyboardButton(
                     self.strings.reserve.apply_button,
                     callback_data='apply')

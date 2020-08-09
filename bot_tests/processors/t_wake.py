@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+import sqlite3
+from datetime import datetime, date, time, timedelta
 from ..mocks.aiogram import Dispatcher
 from ..processors.t_reserve import ReserveProcessorTestCase
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from wakebot.adapters.data import MemoryDataAdapter
+from wakebot.adapters.sqlite.wake import SqliteWakeAdapter
 from wakebot.adapters.state import StateManager
 from wakebot.processors import RuGeneral
 from wakebot.processors.wake import WakeProcessor
 from wakebot.entities.wake import Wake
+from wakebot.entities.user import User
 
 
 class WakeProcessorTestCase(ReserveProcessorTestCase):
@@ -22,6 +25,29 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         self.data_adapter = MemoryDataAdapter()
         self.state_manager = StateManager(self.data_adapter)
         self.processor = WakeProcessor(dp, self.state_manager, self.strings)
+
+    def prepare_data(self):
+        self.connection = sqlite3.connect("bot_tests/data/sqlite/wake.db")
+        cursor = self.connection.cursor()
+
+        cursor.execute("DROP TABLE IF EXISTS wake")
+        self.connection.commit()
+
+        self.wake_adapter = SqliteWakeAdapter(self.connection)
+
+        self.wakes = []
+        start_time = time(datetime.today().time().hour + 1)
+        for i in range(8):
+            user = User(f"Firstname{i}")
+            user.lastname = f"Lastname{i}"
+            user.telegram_id = int(str(i)*8)
+            start_date = date.today() + timedelta(i - 2)
+            wake = Wake(user, start_date=start_date, start_time=start_time,
+                        set_count=(i + 1))
+            wake.board = i % 2
+            wake.hydro = i % 3
+            self.wakes.append(wake)
+            self.wake_adapter.append_data(wake)
 
     def append_state(self, key, state_type="*", state="*"):
         state_data = {}
@@ -115,7 +141,27 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         return result
 
     def create_list_text(self):
-        return "Wake List menu message text"
+        result = ""
+        cur_date = None
+        for i in range(2, 8):
+            reserve = self.wakes[i]
+            if not cur_date or cur_date != reserve.start_date:
+                cur_date = reserve.start_date
+                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
+
+            start_time = reserve.start_time.strftime(self.strings.time_format)
+            end_time = reserve.end_time.strftime(self.strings.time_format)
+            result += f"  {start_time} - {end_time}"
+            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+                       if reserve.board else "")
+            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+                       if reserve.hydro else "")
+            result += "\n"
+
+        if result:
+            return f"{self.strings.reserve.list_header}\n{result}"
+        else:
+            return self.strings.reserve.list_empty
 
     async def test_cmd_wake(self):
         """Proceed /wake command"""
@@ -159,19 +205,22 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
     async def test_callback_main_list(self):
         """Proceed press List button in Main menu"""
+        self.prepare_data()
+        self.processor.data_adapter = self.wake_adapter
         callback = self.test_callback_query
         callback.data = "list"
         reply_markup = self.create_list_keyboard()
         state_key = "101-111-121"
         self.append_state(state_key, "wake", "main")
 
-        checked = self.processor.check_filter(callback.message, "wake", "main")
-        passed, message = self.assert_params(checked, True)
-        assert passed, message
+        checked = self.processor.check_filter(
+            callback.message, "wake", "main")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
 
         await self.processor.callback_main(callback)
 
-        self.check_state(state_key, "Wake List menu message text",
+        self.check_state(state_key, self.create_list_text(),
                          reply_markup, "wake", "list")
 
     async def test_callback_book_date(self):
@@ -308,6 +357,35 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         self.check_state(state_key, self.create_book_text(),
                          reply_markup, "wake", "book")
+
+    async def test_callback_book_apply(self):
+        """Proceed Apply button in Book menu"""
+        self.prepare_data()
+        self.processor.data_adapter = self.wake_adapter
+        callback = self.test_callback_query
+        callback.data = "apply"
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "book")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "book")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        self.wakes[2].start_time = time(22)
+        self.state_manager.set_state(data=self.wakes[2])
+        await self.processor.callback_book(callback)
+
+        reserve = self.state_manager.data
+        self.wake_adapter.get_data_by_keys(reserve.id)
+
+        passed, alert = self.assert_params(reserve.set_count, 3)
+        assert passed, alert
+
+        # Check that state is finished
+        state_data = self.data_adapter.get_data_by_keys(state_key)
+        passed, alert = self.assert_params(state_data, None)
+        assert passed, alert
 
 
 if __name__ == "__main__":

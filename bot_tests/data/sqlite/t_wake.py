@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import date, time
+from datetime import datetime, date, time, timedelta
 from ...base_test_case import BaseTestCase
 from wakebot.adapters.sqlite.wake import SqliteWakeAdapter
 from wakebot.entities.wake import Wake
@@ -8,11 +8,13 @@ from wakebot.entities.user import User
 
 class SqliteWakeAdapterTestCase(BaseTestCase):
 
-    def setUp(self):
+    def __init__(self):
+        super().__init__()
         self.connection = sqlite3.connect("bot_tests/data/sqlite/wake.db")
+
+    def setUp(self):
         self.drop_table()
         self.adapter = SqliteWakeAdapter(self.connection)
-
         self.user = User("Firstname", telegram_id=586)
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
@@ -61,6 +63,22 @@ class SqliteWakeAdapterTestCase(BaseTestCase):
             passed, alert = self.assert_params(row.id, wake.id)
             assert passed, alert
 
+    async def test_get_active_reserves(self):
+        wakes = []
+        self.reserve.start_time = time(datetime.today().time().hour + 1)
+        for i in range(8):
+            self.reserve.user.firstname = str(i)*5
+            self.reserve.start_date = date.today() + timedelta(i - 2)
+            wakes.append(self.adapter.append_data(self.reserve))
+
+        rows = list(self.adapter.get_active_reserves())
+        passed, alert = self.assert_params(len(rows), 6)
+        assert passed, alert
+
+        for i in range(2, 8):
+            passed, alert = self.assert_params(rows[i - 2], wakes[i])
+            assert passed, alert
+
     async def test_get_data_by_keys(self):
         wakes = []
         for i in range(4):
@@ -98,4 +116,50 @@ class SqliteWakeAdapterTestCase(BaseTestCase):
         assert passed, alert
         passed, alert = self.assert_params(
             self.adapter.get_data_by_keys(wakes[2].id), None)
+        assert passed, alert
+
+    async def test_get_concurrent_reserves(self):
+
+        self.wakes = []
+        for i in range(8):
+            start_time = time(10 + i)
+            user = User(f"Firstname{i}")
+            user.lastname = f"Lastname{i}"
+            user.telegram_id = int(str(i)*8)
+            start_date = date.today()
+            wake = Wake(user, start_date=start_date, start_time=start_time,
+                        set_count=(i + 1))
+            wake.board = i % 2
+            wake.hydro = i % 3
+            self.wakes.append(wake)
+            self.adapter.append_data(wake)
+
+        wake = self.wakes[1]
+        wake.set_count = 10
+        rows = list(self.adapter.get_concurrent_reserves(self.wakes[1]))
+
+        passed, alert = self.assert_params(len(rows), 2)
+        assert passed, alert
+
+    async def test_get_concurrent_count(self):
+
+        self.wakes = []
+        for i in range(8):
+            start_time = time(10 + i)
+            user = User(f"Firstname{i}")
+            user.lastname = f"Lastname{i}"
+            user.telegram_id = int(str(i)*8)
+            start_date = date.today()
+            wake = Wake(user, start_date=start_date, start_time=start_time,
+                        set_count=(i + 1))
+            wake.board = i % 2
+            wake.hydro = i % 3
+            self.wakes.append(wake)
+            self.adapter.append_data(wake)
+
+        wake = self.wakes[1]
+        wake.set_count = 10
+        count = self.adapter.get_concurrent_count(self.wakes[1])
+
+        passed, alert = self.assert_params(count, 2)
         assert passed, alert

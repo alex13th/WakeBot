@@ -2,7 +2,7 @@ from typing import Union
 from datetime import date, time, timedelta
 
 from aiogram.dispatcher import Dispatcher
-from aiogram.types import Message, CallbackQuery, ParseMode
+from aiogram.types import Message, CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from aiogram.types import ForceReply, ReplyKeyboardRemove
 from aiogram.types import KeyboardButton, InlineKeyboardButton
@@ -11,6 +11,7 @@ from wakebot.adapters.state import StateManager
 from wakebot.processors.common import StatedProcessor
 from ..entities.user import User
 from ..entities.reserve import Reserve, ReserveSetType
+from ..adapters.data import ReserveDataAdapter
 
 
 class ReserveProcessor(StatedProcessor):
@@ -23,6 +24,8 @@ class ReserveProcessor(StatedProcessor):
             A state manager class instance
         strings:
             A locale strings class
+        data_adapter:
+            A reservation storage data adapter
         book_handlers:
             A dictionary of book menu handlers.
             A key matches InlineKeyboardButton.data value of book menu.
@@ -36,8 +39,8 @@ class ReserveProcessor(StatedProcessor):
                  dispatcher: Dispatcher,
                  state_manager: StateManager,
                  strings: any,
-                 state_type: Union[str, int, None] = "reserve",
-                 parse_mode=ParseMode.MARKDOWN):
+                 data_adapter: Union[ReserveDataAdapter, None] = None,
+                 state_type: Union[str, int, None] = "reserve"):
         """Initialize a class instance
 
         Args:
@@ -54,8 +57,11 @@ class ReserveProcessor(StatedProcessor):
                 Optional. A parse mode of telegram messages (ParseMode).
                 Default value: aiogram.types.ParseMode.MARKDOWN
         """
-        super().__init__(dispatcher, state_manager, state_type, parse_mode)
+        super().__init__(dispatcher, state_manager, state_type,
+                         strings.parse_mode)
         self.strings = strings
+        self.data_adapter = data_adapter
+        self.max_count = 1
 
         self.reserve_set_types = {}
         self.reserve_set_types["set"] = ReserveSetType("set", 5)
@@ -103,6 +109,31 @@ class ReserveProcessor(StatedProcessor):
             state_type=self.state_type,
             state=state,
             data=reserve)
+
+    async def book_apply(self, callback_query: CallbackQuery):
+        """Proceed Apply button in Book menu"""
+        text = reply_markup = state = answer = None
+        state_manager = self.state_manager
+
+        reserve: Reserve = self.state_manager.data
+        concurrent_count = self.data_adapter.get_concurrent_count(reserve)
+        if concurrent_count + reserve.count > self.max_count:
+            text, reply_markup, state, _ = self.create_book_message()
+            answer = self.strings.reserve.apply_error_callback
+            await self.callback_query_action(
+                callback_query, text, reply_markup, state, answer)
+            return
+
+        self.state_manager.set_data(self.data_adapter.append_data(reserve))
+        text = self.create_book_text(check=False)
+        reply_markup = None
+        answer = self.strings.reserve.apply_button_callback
+        state_manager.finish()
+
+        await callback_query.message.edit_text(text,
+                                               reply_markup=reply_markup,
+                                               parse_mode=self.parse_mode)
+        await callback_query.answer(answer)
 
     async def callback_main(self, callback_query: CallbackQuery):
         """Main menu CallbackQuery handler"""
@@ -349,6 +380,18 @@ class ReserveProcessor(StatedProcessor):
                                                parse_mode=self.parse_mode)
         await callback_query.answer(answer)
 
+    def check_concurrents(self, reserve: Reserve):
+        concurs = self.data_adapter.get_concurrent_reserves(reserve)
+        result_text = f"\n{self.strings.reserve.restrict_list_header}\n"
+        i = 1
+        concur_count = reserve.count
+        for concur in concurs:
+            result_text += (f"  {i}. {self.create_reserve_text(concur)}\n")
+            i += 1
+            concur_count += concur.count
+
+        return (concur_count > self.max_count), result_text
+
     def create_main_message(self):
         """Prepare a main menu message
 
@@ -382,8 +425,16 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
-        reply_markup = self.create_book_keyboard()
+        text = self.create_book_text(show_contact=True)
+
+        reserve: Reserve = self.state_manager.data
+        conflicted = False
+        if self.data_adapter and reserve.is_complete:
+            conflicted, concurrent_text = self.check_concurrents(reserve)
+            if conflicted:
+                text += concurrent_text
+        ready = reserve.is_complete and not conflicted
+        reply_markup = self.create_book_keyboard(ready)
         state = "book"
         answer = self.strings.reserve.start_book_button_callback
 
@@ -422,7 +473,7 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_date_keyboard()
         state = "date"
         answer = self.strings.date_button_callback
@@ -442,7 +493,7 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_hour_keyboard()
         state = "hour"
         answer = self.strings.hour_button_callback
@@ -462,10 +513,10 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_minute_keyboard()
         state = "minute"
-        answer = text
+        answer = self.strings.minute_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -482,7 +533,7 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_count_keyboard(6)
         state = "set"
         answer = self.strings.reserve.set_button_callback
@@ -502,7 +553,7 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text()
+        text = self.create_book_text(show_contact=True)
         reply_markup = self.create_count_keyboard(6)
         state = "set_hour"
         answer = self.strings.reserve.set_button_callback
@@ -522,7 +573,8 @@ class ReserveProcessor(StatedProcessor):
             answer:
                 A callback answer text.
         """
-        text = f"{self.create_book_text()}\n{self.strings.phone_message}"
+        text = (f"{self.create_book_text(show_contact=True)}\n"
+                f"{self.strings.phone_message}")
         reply_markup = ForceReply()
         state = "phone"
         answer = self.strings.phone_button_callback
@@ -538,8 +590,15 @@ class ReserveProcessor(StatedProcessor):
 
         return "Hello message!"
 
-    def create_book_text(self, show_contact: bool = True) -> str:
+    def create_book_text(self, show_contact: bool = False) -> str:
         """Create a book menu text
+        Args:
+            check:
+                Optional. A boolean value means to need check
+                concurrent reservations.
+            show_contact:
+                Optional. A boolean value means to allow
+                show contact information
 
         Returns:
             A message text.
@@ -548,9 +607,9 @@ class ReserveProcessor(StatedProcessor):
         reserve = self.state_manager.data
         result = ""
 
-        if reserve.user:
+        if reserve.user and show_contact:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
-            if show_contact and reserve.user.phone_number:
+            if reserve.user.phone_number:
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
@@ -591,6 +650,14 @@ class ReserveProcessor(StatedProcessor):
         """
         return f"{self.create_book_text()}\n{self.strings.phone_message}"
 
+    def create_reserve_text(self, reserve: Reserve) -> str:
+        result = ""
+        start_time = reserve.start_time.strftime(self.strings.time_format)
+        end_time = reserve.end_time.strftime(self.strings.time_format)
+        result += f"  {start_time} - {end_time}"
+
+        return result
+
     def create_main_keyboard(self) -> InlineKeyboardMarkup:
         """Create main menu InlineKeyboardMarkup
 
@@ -621,9 +688,11 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_book_keyboard(self) -> InlineKeyboardMarkup:
+    def create_book_keyboard(self, ready=False) -> InlineKeyboardMarkup:
         """Create book menu InlineKeyboardMarkup
-
+        Args:
+            ready:
+                Ready to apply reservation flag.
         Returns:
             A InlineKeyboardMarkup instance.
         """
@@ -642,8 +711,7 @@ class ReserveProcessor(StatedProcessor):
         result.add(button)
 
         if self.state_manager.data:
-            reserve: Reserve = self.state_manager.data
-            if reserve.is_complete:
+            if ready:
                 button = InlineKeyboardButton(
                     self.strings.reserve.apply_button,
                     callback_data='apply')

@@ -1,5 +1,5 @@
 from typing import Union
-from ..entities.wake import Wake
+from ..entities.reserve import Reserve
 
 
 class BaseDataAdapter:
@@ -134,7 +134,7 @@ class MemoryDataAdapter(BaseDataAdapter):
         del self.__storage[key]
 
 
-class WakeDataAdapter:
+class ReserveDataAdapter:
     """A base wakeboard reservation adapter class"""
 
     def get_data(self) -> iter:
@@ -145,7 +145,7 @@ class WakeDataAdapter:
         """
         return NotImplementedError
 
-    def get_data_by_keys(self, id: int) -> Union[Wake, None]:
+    def get_data_by_keys(self, id: int) -> Union[Reserve, None]:
         """Get a set of data from storage by a keys
 
         Args:
@@ -157,7 +157,31 @@ class WakeDataAdapter:
         """
         return NotImplementedError
 
-    def append_data(self, reserve: Wake) -> Wake:
+    def get_active_reserves(self) -> iter:
+        """Get an active wakeboard reservations from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        raise NotImplementedError
+
+    def get_concurrent_reserves(self, reserve: Reserve) -> iter:
+        """Get an concurrent reservations from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        raise NotImplementedError
+
+    def get_concurrent_count(self, reserve: Reserve) -> int:
+        """Get an concurrent reservations from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        raise NotImplementedError
+
+    def append_data(self, reserve: Reserve) -> Reserve:
         """Append new data to storage
 
         Args:
@@ -166,7 +190,7 @@ class WakeDataAdapter:
         """
         return NotImplementedError
 
-    def update_data(self, reserve: Wake):
+    def update_data(self, reserve: Reserve):
         """Append new data to storage
 
         Args:

@@ -69,12 +69,10 @@ class Wake(Reserve):
                          start_date=start_date, start_time=start_time,
                          set_type_id=set_type_id, set_count=set_count, id=id)
 
-        if set_type_id == "set":
-            self.set_type = ReserveSetType(set_type_id, 10)
-        elif set_type_id == "hour":
+        if set_type_id == "hour":
             self.set_type = ReserveSetType(set_type_id, 60)
         else:
-            raise ValueError
+            self.set_type = ReserveSetType(set_type_id, 10)
 
         self.board = board
         self.hydro = hydro

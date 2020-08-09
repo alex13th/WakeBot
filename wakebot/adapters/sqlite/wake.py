@@ -1,12 +1,12 @@
 from sqlite3 import Connection
 from datetime import datetime
 from typing import Union
-from ..data import WakeDataAdapter
+from ..data import ReserveDataAdapter
 from ...entities.wake import Wake
 from ...entities.user import User
 
 
-class SqliteWakeAdapter(WakeDataAdapter):
+class SqliteWakeAdapter(ReserveDataAdapter):
     """Wakeboard SQLite data adapter class
 
     Attributes:
@@ -34,6 +34,34 @@ class SqliteWakeAdapter(WakeDataAdapter):
                 id, firstname, lastname,
                 middlename, displayname, telegram_id, start,
                 set_type_id, set_count, board, hydro FROM wake""")
+        for row in cursor:
+            user = User(row[1])
+            user.lastname = row[2]
+            user.middlename = row[3]
+            user.displayname = row[4]
+            user.telegram_id = row[5]
+            start = datetime.fromtimestamp(row[6])
+
+            yield Wake(
+                id=row[0], user=user,
+                start_date=start.date(), start_time=start.time(),
+                set_type_id=row[7], set_count=row[8],
+                board=row[9], hydro=row[10])
+
+    def get_active_reserves(self) -> iter:
+        """Get an active wakeboard reservations from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        cursor = self.__connection.cursor()
+        cursor = cursor.execute(
+            """SELECT
+                id, firstname, lastname,
+                middlename, displayname, telegram_id, start,
+                set_type_id, set_count, board, hydro FROM wake
+                WHERE start >= ?
+                ORDER BY start""", [datetime.today().timestamp()])
         for row in cursor:
             user = User(row[1])
             user.lastname = row[2]
@@ -83,6 +111,64 @@ class SqliteWakeAdapter(WakeDataAdapter):
             set_type_id=row[7], set_count=row[8],
             board=row[9], hydro=row[10])
 
+    def get_concurrent_reserves(self, reserve: Wake) -> iter:
+        """Get an concurrent reservations from storage
+
+        Returns:
+            A iterator object of given data
+        """
+
+        start_ts = reserve.start.timestamp()
+        end_ts = reserve.end.timestamp()
+        cursor = self.__connection.cursor()
+        cursor = cursor.execute(
+            """SELECT
+                id, firstname, lastname,
+                middlename, displayname, telegram_id, phone_number, start, end,
+                set_type_id, set_count, board, hydro, count FROM wake
+                WHERE (? = start) or (? < start and ? > start) or
+                      (? > start and ? < end)
+                ORDER BY start""",
+            (start_ts, start_ts, end_ts, start_ts, start_ts))
+
+        for row in cursor:
+            user = User(row[1])
+            user.lastname = row[2]
+            user.middlename = row[3]
+            user.displayname = row[4]
+            user.telegram_id = row[5]
+            user.phone_number = row[6]
+            start = datetime.fromtimestamp(row[7]) if row[7] else None
+            start_date = start.date() if start else None
+            start_time = start.time() if start else None
+            _ = datetime.fromtimestamp(row[8])
+
+            yield Wake(
+                id=row[0], user=user,
+                start_date=start_date, start_time=start_time,
+                set_type_id=row[9], set_count=row[10],
+                board=row[11], hydro=row[12])
+
+    def get_concurrent_count(self, reserve: Wake) -> int:
+        """Get an concurrent reservations count from storage
+
+        Returns:
+            An integer count of concurrent reservations
+        """
+
+        start_ts = reserve.start.timestamp()
+        end_ts = reserve.end.timestamp()
+        cursor = self.__connection.cursor()
+        cursor = cursor.execute(
+            """SELECT SUM(count) AS concurrent_count FROM wake
+                WHERE (? = start) or (? < start and ? > start) or
+                      (? > start and ? < end)
+                ORDER BY start""",
+            (start_ts, start_ts, end_ts, start_ts, start_ts))
+
+        row = list(cursor)
+        return row[0][0] if row[0][0] else 0
+
     def append_data(self, reserve: Wake) -> Wake:
         """Append new data to storage
 
@@ -93,20 +179,23 @@ class SqliteWakeAdapter(WakeDataAdapter):
         cursor = self.__connection.cursor()
         cursor.execute("""
             INSERT INTO wake(telegram_id, firstname, lastname,
-                middlename, displayname,
-                start, set_type_id, set_count, board, hydro)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                middlename, displayname, phone_number,
+                start, end, set_type_id, set_count, board, hydro, count)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 reserve.user.telegram_id,
                 reserve.user.firstname,
                 reserve.user.lastname,
                 reserve.user.middlename,
                 reserve.user.displayname,
+                reserve.user.phone_number,
                 reserve.start.timestamp(),
+                reserve.end.timestamp(),
                 reserve.set_type.set_id,
                 reserve.set_count,
                 reserve.board,
-                reserve.hydro
+                reserve.hydro,
+                reserve.count
             ))
         self.__connection.commit()
 
@@ -125,21 +214,24 @@ class SqliteWakeAdapter(WakeDataAdapter):
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
             """UPDATE wake SET
-                firstname = ?, lastname = ?,
-                middlename = ?, displayname = ?, telegram_id = ?, start = ?,
-                set_type_id = ?, set_count = ?, board = ?, hydro = ?
+                firstname = ?, lastname = ?, middlename = ?, displayname = ?,
+                phone_number = ?, telegram_id = ?, start = ?, end = ?,
+                set_type_id = ?, set_count = ?, board = ?, hydro = ?, count = ?
                 WHERE id = ?
            """, (
                 reserve.user.firstname,
                 reserve.user.lastname,
                 reserve.user.middlename,
                 reserve.user.displayname,
+                reserve.user.phone_number,
                 reserve.user.telegram_id,
                 reserve.start.timestamp(),
+                reserve.end.timestamp(),
                 reserve.set_type.set_id,
                 reserve.set_count,
                 reserve.board,
                 reserve.hydro,
+                reserve.count,
                 reserve.id
             ))
         self.__connection.commit()
@@ -172,9 +264,11 @@ class SqliteWakeAdapter(WakeDataAdapter):
                 lastname text,
                 middlename text,
                 displayname text,
+                phone_number text,
                 start TIMESTAMP,
+                end TIMESTAMP,
                 set_type_id text,
                 set_count integer,
-                board integer, hydro integer)""")
+                board integer, hydro integer, count integer)""")
 
         self.connection.commit()

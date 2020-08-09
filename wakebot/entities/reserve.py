@@ -73,12 +73,10 @@ class Reserve:
             id:
                 Optional. An integer wakeboard reservation identifier
         """
-        if set_type_id == "set":
-            self.set_type = ReserveSetType(set_type_id, 5)
-        elif set_type_id == "hour":
+        if set_type_id == "hour":
             self.set_type = ReserveSetType(set_type_id, 60)
         else:
-            raise ValueError
+            self.set_type = ReserveSetType(set_type_id, 5)
 
         self.__user = user
         self.__start_date = start_date if start_date else date.today()
@@ -166,6 +164,24 @@ class Reserve:
             result = result.time()
 
         return result
+
+    def check_concurrent(self, other) -> int:
+        """Check reservation time conflict
+
+        Returns:
+            Count of reservations is conflicted.
+        """
+        if self.start == other.start:
+            return self.count + other.count
+
+        if (self.start < other.start and self.end > other.start):
+            return self.count + other.count
+
+        if (self.start > other.start and
+                self.start < other.end):
+            return self.count + other.count
+
+        return self.count
 
     def __str__(self) -> str:
         """Provide built-in mapping to string"""

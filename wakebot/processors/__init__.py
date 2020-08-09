@@ -19,6 +19,12 @@ class RuDefault:
 class RuReserve:
     book_message = "Выберите действие:"
 
+    list_header = "*Список бронирований:*"
+    list_empty = "На текущий момент нет активных бронирований"
+
+    restrict_list_header = ("⛔️ *ВНИМАНИЕ!\n"
+                            "Совпадение с активными бронированиями:*")
+
     main_callback = "Главное меню"
 
     start_book_button = "Начать бронирование"
@@ -32,6 +38,8 @@ class RuReserve:
 
     apply_text = "Забронировать"
     apply_button = f"👌 {apply_text}"
+    apply_button_callback = "Бронь внесена"
+    apply_error_callback = "Ошибка бронирования"
 
     message_header = "*Бронирование*"
 
@@ -63,20 +71,20 @@ class RuWake:
     icon_board = "🏄‍♂️"
     wake_text = "Вейкборд"
     board_button = f"{icon_board} {wake_text}"
-    board_button_add = f"{wake_text} добавлен"
-    board_button_remove = f"{wake_text} удален"
+    board_button_callback = "Аренда вейкборда"
 
     icon_hydro = "👙"
     hydro_text = "Гидрокостюм"
     hydro_button = f"{icon_hydro} {hydro_text}"
-    hydro_button_add = f"{hydro_text} добавлен"
-    hydro_button_remove = f"{hydro_text} удален"
+    hydro_button_callback = "Аренда гидрокостюма"
 
 
 class RuGeneral:
     default = RuDefault
     reserve = RuReserve
     wake = RuWake
+
+    parse_mode = ParseMode.MARKDOWN
 
     icon_phone = "📞"
     phone_text = "Телефон"
@@ -97,7 +105,8 @@ class RuGeneral:
     time_button_callback = "Выберите час"
     time_format = "%H:%M"
     time_zone = +9
-    hour_button_callback = "Выберите минуты"
+    hour_button_callback = "Выберите часы"
+    minute_button_callback = "Выберите минуты"
 
     back_button = "Назад"
 
