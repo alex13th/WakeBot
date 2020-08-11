@@ -3,7 +3,8 @@ from wakebot.adapters.data import MemoryDataAdapter
 
 
 class MemoryDataAdapterTestCase(BaseTestCase):
-
+    """MemoryDataAdapter class"""
+    
     def setUp(self):
         self.adapter = MemoryDataAdapter()
 

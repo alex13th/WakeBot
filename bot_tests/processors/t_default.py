@@ -8,7 +8,8 @@ from wakebot.processors import RuGeneral
 
 
 class DefaultProcessorTestCase(BaseTestCase):
-
+    """DefaultProcessor class"""
+    
     def setUp(self):
         dp = Dispatcher()
         self.processor = DefaultProcessor(dp, RuGeneral)

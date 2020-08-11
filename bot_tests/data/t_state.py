@@ -8,7 +8,7 @@ from wakebot.adapters.data import MemoryDataAdapter
 
 
 class StateManagerTestCase(BaseTestCase):
-
+    """StateManager class"""
     def setUp(self):
         self.data_adapter = MemoryDataAdapter()
 
@@ -87,6 +87,7 @@ class StateManagerTestCase(BaseTestCase):
 
 
 class StateProviderTestCase(BaseTestCase):
+    """StateProvider class"""
 
     state_provider = StateProvider()
 

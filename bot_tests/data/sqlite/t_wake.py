@@ -7,7 +7,7 @@ from wakebot.entities.user import User
 
 
 class SqliteWakeAdapterTestCase(BaseTestCase):
-
+    """SqliteWakeAdapter class"""
     def __init__(self):
         super().__init__()
         self.connection = sqlite3.connect("bot_tests/data/sqlite/wake.db")
