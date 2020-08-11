@@ -21,7 +21,7 @@ dp.middleware.setup(LoggingMiddleware())
 state_manager = StateManager(MemoryDataAdapter())
 
 default_processor = DefaultProcessor(dp, RuGeneral)
-connection = sqlite3.connect("wakebot/standalone/wake.db")
+connection = sqlite3.connect("standalone/wake.db")
 wake_adapter = SqliteWakeAdapter(connection)
 wake_processor = WakeProcessor(dp, state_manager, RuGeneral, wake_adapter)
 
