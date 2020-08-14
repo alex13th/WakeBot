@@ -11,6 +11,9 @@ from bot_tests.processors import WakeProcessorTestCase
 from bot_tests.data.sqlite import SqliteWakeAdapterTestCase
 from bot_tests.data.sqlite import SqliteUserAdapterTestCase
 
+from bot_tests.data.postgres import PostgresWakeAdapterTestCase
+from bot_tests.data.postgres import PostgresUserAdapterTestCase
+
 test_count = fail_count = 0
 
 tests, fails = StateManagerTestCase().run_tests_async()
@@ -49,11 +52,19 @@ tests, fails = WakeProcessorTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
-tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
+# tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
+# test_count += tests
+# fail_count += fails
+
+# tests, fails = SqliteUserAdapterTestCase().run_tests_async()
+# test_count += tests
+# fail_count += fails
+
+tests, fails = PostgresWakeAdapterTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
-tests, fails = SqliteUserAdapterTestCase().run_tests_async()
+tests, fails = PostgresUserAdapterTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
