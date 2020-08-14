@@ -9,6 +9,7 @@ from bot_tests.processors import ReserveProcessorTestCase
 from bot_tests.processors import WakeProcessorTestCase
 
 from bot_tests.data.sqlite import SqliteWakeAdapterTestCase
+from bot_tests.data.sqlite import SqliteUserAdapterTestCase
 
 test_count = fail_count = 0
 
@@ -49,6 +50,10 @@ test_count += tests
 fail_count += fails
 
 tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
+
+tests, fails = SqliteUserAdapterTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
