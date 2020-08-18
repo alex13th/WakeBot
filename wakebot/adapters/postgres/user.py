@@ -11,8 +11,9 @@ class PostgresUserAdapter(UserDataAdapter):
             A SQLite connection instance.
     """
 
-    def __init__(self, connection):
+    def __init__(self, connection, table_name="users"):
         self.__connection = connection
+        self.__table_name = table_name
         self.create_table()
 
     @property
@@ -21,8 +22,9 @@ class PostgresUserAdapter(UserDataAdapter):
 
     def create_table(self):
         with self.__connection.cursor() as cursor:
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users(
+            cursor.execute(
+                f"CREATE TABLE IF NOT EXISTS {self.__table_name}"
+                """(
                     id SERIAL PRIMARY KEY,
                     telegram_id integer,
                     firstname varchar(20),
@@ -41,10 +43,9 @@ class PostgresUserAdapter(UserDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, phone_number
-                    FROM users""")
+                """SELECT id, firstname, lastname, middlename, displayname,
+                   telegram_id, phone_number"""
+                f" FROM {self.__table_name}")
             for row in cursor:
                 yield User(
                     user_id=row[0],
@@ -70,9 +71,9 @@ class PostgresUserAdapter(UserDataAdapter):
             cursor.execute(
                 """SELECT
                     id, firstname, lastname,
-                    middlename, displayname, telegram_id, phone_number
-                    FROM users
-                    WHERE id = %s""", [id])
+                    middlename, displayname, telegram_id, phone_number"""
+                f" FROM {self.__table_name}"
+                "    WHERE id = %s", [id])
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -104,9 +105,9 @@ class PostgresUserAdapter(UserDataAdapter):
             cursor.execute(
                 """SELECT
                     id, firstname, lastname,
-                    middlename, displayname, telegram_id, phone_number
-                    FROM users
-                    WHERE telegram_id = %s""", [telegram_id])
+                    middlename, displayname, telegram_id, phone_number"""
+                f" FROM {self.__table_name}"
+                "  WHERE telegram_id = %s", [telegram_id])
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -132,8 +133,9 @@ class PostgresUserAdapter(UserDataAdapter):
                 An instance of entity wake class.
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO users(telegram_id, firstname, lastname,
+            cursor.execute(
+                f"INSERT INTO {self.__table_name}(telegram_id, firstname, "
+                """lastname,
                     middlename, displayname, phone_number)
                     VALUES(%s, %s, %s, %s, %s, %s)
                     RETURNING id
@@ -162,11 +164,11 @@ class PostgresUserAdapter(UserDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """UPDATE users SET
-                    firstname = %s, lastname = %s, middlename = %s,
+                f"UPDATE {self.__table_name} SET "
+                """ firstname = %s, lastname = %s, middlename = %s,
                     displayname = %s, phone_number = %s, telegram_id = %s
                     WHERE id = %s
-            """, (
+                """, (
                     user.firstname,
                     user.lastname,
                     user.middlename,
@@ -189,7 +191,5 @@ class PostgresUserAdapter(UserDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """DELETE FROM users
-                    WHERE id = %s
-            """, [id])
+                f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
             self.__connection.commit()

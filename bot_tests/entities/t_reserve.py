@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 from ..base_test_case import BaseTestCase
 from datetime import date, time, datetime, timedelta
 
-from wakebot.entities.reserve import Reserve
-from wakebot.entities.user import User
+from wakebot.entities import Reserve, User
 
 
 class ReserveTestCase(BaseTestCase):

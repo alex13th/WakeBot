@@ -2,8 +2,7 @@
 from ..base_test_case import BaseTestCase
 from datetime import date, time, datetime, timedelta
 
-from wakebot.entities.wake import Wake
-from wakebot.entities.user import User
+from wakebot.entities import Wake, User
 
 
 class WakeTestCase(BaseTestCase):

@@ -1,19 +1,17 @@
+import os
 import psycopg2
 from datetime import datetime, date, time, timedelta
 from ...base_test_case import BaseTestCase
-from wakebot.adapters.postgres.wake import PostgressWakeAdapter
-from wakebot.entities.wake import Wake
-from wakebot.entities.user import User
+from wakebot.adapters.postgres import PostgressWakeAdapter
+from wakebot.entities import Wake, User
 
 
 class PostgresWakeAdapterTestCase(BaseTestCase):
     """PostgresWakeAdapter class"""
     def __init__(self):
         super().__init__()
-        self.connection = psycopg2.connect(
-            user="postgres",
-            password="*",
-            database="postgres")
+        DATABASE_URL = os.environ["DATABASE_URL"]
+        self.connection = psycopg2.connect(DATABASE_URL)
 
     def setUp(self):
         self.drop_table()
@@ -28,7 +26,7 @@ class PostgresWakeAdapterTestCase(BaseTestCase):
     def drop_table(self):
         cursor = self.connection.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS wake")
+        cursor.execute("DROP TABLE IF EXISTS wake_reserves")
 
         self.connection.commit()
 

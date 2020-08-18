@@ -1,4 +1,7 @@
 from aiogram.types import ParseMode
+from .default import DefaultProcessor
+from .reserve import ReserveProcessor
+from .wake import WakeProcessor
 
 parse_mode = ParseMode.MARKDOWN
 
@@ -114,3 +117,7 @@ class RuGeneral:
     name_label = f"*{name_text}:*"
 
     count_label = "*Количество:*"
+
+
+if __name__ == "__main__":
+    DefaultProcessor, ReserveProcessor, WakeProcessor

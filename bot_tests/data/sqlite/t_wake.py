@@ -1,9 +1,8 @@
 import sqlite3
 from datetime import datetime, date, time, timedelta
 from ...base_test_case import BaseTestCase
-from wakebot.adapters.sqlite.wake import SqliteWakeAdapter
-from wakebot.entities.wake import Wake
-from wakebot.entities.user import User
+from wakebot.adapters.sqlite import SqliteWakeAdapter
+from wakebot.entities import Wake, User
 
 
 class SqliteWakeAdapterTestCase(BaseTestCase):
@@ -25,7 +24,7 @@ class SqliteWakeAdapterTestCase(BaseTestCase):
     def drop_table(self):
         cursor = self.connection.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS wake")
+        cursor.execute("DROP TABLE IF EXISTS wake_reserves")
 
         self.connection.commit()
 

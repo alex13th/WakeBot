@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..base_test_case import BaseTestCase
-from wakebot.entities.user import User
+from wakebot.entities import User
 
 
 class UserTestCase(BaseTestCase):

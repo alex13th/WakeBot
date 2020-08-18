@@ -14,8 +14,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
             A SQLite connection instance.
     """
 
-    def __init__(self, connection: Connection):
+    def __init__(self, connection: Connection, table_name="wake_reserves"):
         self.__connection = connection
+        self.__table_name = table_name
         self.create_table()
 
     @property
@@ -30,10 +31,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, start,
-                set_type_id, set_count, board, hydro FROM wake""")
+            """ SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, start, set_type_id, set_count, board, hydro"""
+            f"  FROM {self.__table_name}")
         for row in cursor:
             user = User(row[1])
             user.lastname = row[2]
@@ -56,11 +56,10 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, start,
-                set_type_id, set_count, board, hydro FROM wake
-                WHERE start >= ?
+            """ SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, start, set_type_id, set_count, board, hydro"""
+            f"  FROM {self.__table_name}"
+            """ WHERE start >= ?
                 ORDER BY start""", [datetime.today().timestamp()])
         for row in cursor:
             user = User(row[1])
@@ -88,11 +87,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         """
         cursor = self.__connection.cursor()
         rows = list(cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, start,
-                set_type_id, set_count, board, hydro FROM wake
-                WHERE id = ?""", [id]))
+            """SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, start, set_type_id, set_count, board, hydro"""
+            f" FROM {self.__table_name} WHERE id = ?", [id]))
 
         if len(rows) == 0:
             return None
@@ -122,11 +119,11 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         end_ts = reserve.end.timestamp()
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, phone_number, start, end,
-                set_type_id, set_count, board, hydro, count FROM wake
-                WHERE (? = start) or (? < start and ? > start) or
+            """ SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, phone_number, start, end,
+                    set_type_id, set_count, board, hydro, count"""
+            f"  FROM {self.__table_name}"
+            """ WHERE (? = start) or (? < start and ? > start) or
                       (? > start and ? < end)
                 ORDER BY start""",
             (start_ts, start_ts, end_ts, start_ts, start_ts))
@@ -160,8 +157,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         end_ts = reserve.end.timestamp()
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """SELECT SUM(count) AS concurrent_count FROM wake
-                WHERE (? = start) or (? < start and ? > start) or
+            "   SELECT SUM(count) AS concurrent_count"
+            f"  FROM {self.__table_name}"
+            """ WHERE (? = start) or (? < start and ? > start) or
                       (? > start and ? < end)
                 ORDER BY start""",
             (start_ts, start_ts, end_ts, start_ts, start_ts))
@@ -177,10 +175,11 @@ class SqliteWakeAdapter(ReserveDataAdapter):
                 An instance of entity wake class.
         """
         cursor = self.__connection.cursor()
-        cursor.execute("""
-            INSERT INTO wake(telegram_id, firstname, lastname,
-                middlename, displayname, phone_number,
-                start, end, set_type_id, set_count, board, hydro, count)
+        cursor.execute(
+            f"  INSERT INTO {self.__table_name} ("
+            """     telegram_id, firstname, lastname,
+                    middlename, displayname, phone_number,
+                    start, end, set_type_id, set_count, board, hydro, count)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 reserve.user.telegram_id,
@@ -213,10 +212,11 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """UPDATE wake SET
-                firstname = ?, lastname = ?, middlename = ?, displayname = ?,
-                phone_number = ?, telegram_id = ?, start = ?, end = ?,
-                set_type_id = ?, set_count = ?, board = ?, hydro = ?, count = ?
+            f"  UPDATE {self.__table_name} SET"
+            """     firstname = ?, lastname = ?, middlename = ?, displayname = ?,
+                    phone_number = ?, telegram_id = ?, start = ?, end = ?,
+                    set_type_id = ?, set_count = ?,
+                    board = ?, hydro = ?, count = ?
                 WHERE id = ?
            """, (
                 reserve.user.firstname,
@@ -248,27 +248,26 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """DELETE FROM wake
-                WHERE id = ?
-           """, [id])
+            f" DELETE FROM {self.__table_name} WHERE id = ?", [id])
         self.__connection.commit()
 
     def create_table(self):
         cursor = self.__connection.cursor()
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS wake(
-                id integer PRIMARY KEY AUTOINCREMENT,
-                telegram_id integer,
-                firstname text,
-                lastname text,
-                middlename text,
-                displayname text,
-                phone_number text,
-                start TIMESTAMP,
-                end TIMESTAMP,
-                set_type_id text,
-                set_count integer,
-                board integer, hydro integer, count integer)""")
+        cursor.execute(
+            f"  CREATE TABLE IF NOT EXISTS {self.__table_name} ("
+            """     id integer PRIMARY KEY AUTOINCREMENT,
+                    telegram_id integer,
+                    firstname text,
+                    lastname text,
+                    middlename text,
+                    displayname text,
+                    phone_number text,
+                    start TIMESTAMP,
+                    end TIMESTAMP,
+                    set_type_id text,
+                    set_count integer,
+                    board integer, hydro integer, count integer)
+            """)
 
         self.connection.commit()

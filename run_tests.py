@@ -52,13 +52,13 @@ tests, fails = WakeProcessorTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
-# tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = SqliteUserAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = SqliteUserAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
 tests, fails = PostgresWakeAdapterTestCase().run_tests_async()
 test_count += tests
