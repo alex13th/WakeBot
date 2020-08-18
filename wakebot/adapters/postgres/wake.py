@@ -13,8 +13,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             A SQLite connection instance.
     """
 
-    def __init__(self, connection):
+    def __init__(self, connection, table_name="wake_reserves"):
         self.__connection = connection
+        self.__table_name = table_name
         self.create_table()
 
     @property
@@ -24,8 +25,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
     def create_table(self):
 
         with self.__connection.cursor() as cursor:
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS wake(
+            cursor.execute(
+                f"CREATE TABLE IF NOT EXISTS {self.__table_name}"
+                """ (
                     id SERIAL PRIMARY KEY,
                     telegram_id integer,
                     firstname varchar(20),
@@ -52,7 +54,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                 """SELECT
                     id, firstname, lastname,
                     middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, board, hydro FROM wake""")
+                    set_type_id, set_count, board, hydro """
+                f" FROM {self.__table_name}")
             for row in cursor:
                 user = User(row[1])
                 user.lastname = row[2]
@@ -75,11 +78,11 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, board, hydro FROM wake
-                    WHERE start_time >= %s
+                """ SELECT id, firstname, lastname, middlename, displayname,
+                        telegram_id, start_time, set_type_id, set_count,
+                        board, hydro"""
+                f"  FROM {self.__table_name}"
+                """ WHERE start_time >= %s
                     ORDER BY start_time""", [datetime.today()])
 
             for row in cursor:
@@ -108,11 +111,10 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, board, hydro FROM wake
-                    WHERE id = %s""", [id])
+                """ SELECT id, firstname, lastname, middlename, displayname,
+                        telegram_id, start_time, set_type_id, set_count,
+                        board, hydro"""
+                f"  FROM {self.__table_name} WHERE id = %s", [id])
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -143,13 +145,11 @@ class PostgressWakeAdapter(ReserveDataAdapter):
 
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, phone_number,
-                    start_time, end_time, set_type_id, set_count,
-                    board, hydro, count
-                    FROM wake
-                    WHERE (%s = start_time)
+                """ SELECT id, firstname, lastname, middlename, displayname,
+                        telegram_id, phone_number, start_time, end_time,
+                        set_type_id, set_count, board, hydro, count"""
+                f"  FROM {self.__table_name}"
+                """ WHERE (%s = start_time)
                         or (%s < start_time and %s > start_time)
                         or (%s > start_time and %s < end_time)
                     ORDER BY start_time""",
@@ -165,7 +165,6 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                 start = row[7]
                 start_date = start.date() if start else None
                 start_time = start.time() if start else None
-                # _ = datetime.fromtimestamp(row[8])
 
                 yield Wake(
                     id=row[0], user=user,
@@ -184,8 +183,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
 
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """SELECT SUM(count) AS concurrent_count FROM wake
-                    WHERE (%s = start_time)
+                "   SELECT SUM(count) AS concurrent_count"
+                f"  FROM {self.__table_name}"
+                """ WHERE (%s = start_time)
                         or (%s < start_time and %s > start_time)
                         or (%s > start_time and %s < end_time)""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
@@ -205,11 +205,12 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                 An instance of entity wake class.
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO wake(telegram_id, firstname, lastname,
-                    middlename, displayname, phone_number,
-                    start_time, end_time, set_type_id, set_count,
-                    board, hydro, count)
+            cursor.execute(
+                f"  INSERT INTO {self.__table_name} ("
+                """     telegram_id, firstname, lastname,
+                        middlename, displayname, phone_number,
+                        start_time, end_time, set_type_id, set_count,
+                        board, hydro, count)
                     VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
@@ -244,13 +245,12 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """UPDATE wake SET
-                    firstname = %s, lastname = %s, middlename = %s,
-                    displayname = %s, phone_number = %s, telegram_id = %s,
-                    start_time = %s, end_time = %s, set_type_id = %s,
-                    set_count = %s, board = %s, hydro = %s, count = %s
-                    WHERE id = %s
-            """, (
+                f"  UPDATE {self.__table_name} SET"
+                """     firstname = %s, lastname = %s, middlename = %s,
+                        displayname = %s, phone_number = %s, telegram_id = %s,
+                        start_time = %s, end_time = %s, set_type_id = %s,
+                        set_count = %s, board = %s, hydro = %s, count = %s"""
+                "   WHERE id = %s", (
                     reserve.user.firstname,
                     reserve.user.lastname,
                     reserve.user.middlename,
@@ -264,8 +264,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     reserve.board,
                     reserve.hydro,
                     reserve.count,
-                    reserve.id
-                ))
+                    reserve.id))
             self.__connection.commit()
 
     def remove_data_by_keys(self, id: int):
@@ -280,7 +279,5 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                """DELETE FROM wake
-                    WHERE id = %s
-            """, [id])
+                f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
             self.__connection.commit()

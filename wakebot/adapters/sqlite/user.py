@@ -12,8 +12,9 @@ class SqliteUserAdapter(UserDataAdapter):
             A SQLite connection instance.
     """
 
-    def __init__(self, connection: Connection):
+    def __init__(self, connection: Connection, table_name="users"):
         self.__connection = connection
+        self.__table_name = table_name
         self.create_table()
 
     @property
@@ -23,15 +24,15 @@ class SqliteUserAdapter(UserDataAdapter):
     def create_table(self):
         cursor = self.__connection.cursor()
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users(
-                id integer PRIMARY KEY AUTOINCREMENT,
-                telegram_id integer,
-                firstname text,
-                lastname text,
-                middlename text,
-                displayname text,
-                phone_number text)""")
+        cursor.execute(
+            f"  CREATE TABLE IF NOT EXISTS {self.__table_name} ("
+            """     id integer PRIMARY KEY AUTOINCREMENT,
+                    telegram_id integer,
+                    firstname text,
+                    lastname text,
+                    middlename text,
+                    displayname text,
+                    phone_number text)""")
 
         self.connection.commit()
         cursor.close()
@@ -44,10 +45,9 @@ class SqliteUserAdapter(UserDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, phone_number
-                FROM users""")
+            """ SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, phone_number"""
+            f"  FROM {self.__table_name}")
         for row in cursor:
             yield User(
                 user_id=row[0],
@@ -72,11 +72,9 @@ class SqliteUserAdapter(UserDataAdapter):
         """
         cursor = self.__connection.cursor()
         rows = list(cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, phone_number
-                FROM users
-                WHERE id = ?""", [id]))
+            """ SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, phone_number"""
+            f"  FROM {self.__table_name} WHERE id = ?", [id]))
 
         if len(rows) == 0:
             return None
@@ -105,11 +103,10 @@ class SqliteUserAdapter(UserDataAdapter):
         """
         cursor = self.__connection.cursor()
         rows = list(cursor.execute(
-            """SELECT
-                id, firstname, lastname,
-                middlename, displayname, telegram_id, phone_number
-                FROM users
-                WHERE telegram_id = ?""", [telegram_id]))
+            """ SELECT id, firstname, lastname, middlename, displayname,
+                    telegram_id, phone_number"""
+            f"  FROM {self.__table_name} WHERE telegram_id = ?",
+            [telegram_id]))
 
         if len(rows) == 0:
             return None
@@ -134,11 +131,11 @@ class SqliteUserAdapter(UserDataAdapter):
                 An instance of entity wake class.
         """
         cursor = self.__connection.cursor()
-        cursor.execute("""
-            INSERT INTO users(telegram_id, firstname, lastname,
+        cursor.execute(
+            f"  INSERT INTO {self.__table_name} ("
+            """     telegram_id, firstname, lastname,
                 middlename, displayname, phone_number)
-                VALUES(?, ?, ?, ?, ?, ?)
-            """, (
+                VALUES(?, ?, ?, ?, ?, ?)""", (
                 user.telegram_id,
                 user.firstname,
                 user.lastname,
@@ -163,11 +160,10 @@ class SqliteUserAdapter(UserDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """UPDATE users SET
-                firstname = ?, lastname = ?, middlename = ?, displayname = ?,
-                phone_number = ?, telegram_id = ?
-                WHERE id = ?
-           """, (
+            f"  UPDATE {self.__table_name} SET"
+            """     firstname = ?, lastname = ?, middlename = ?, displayname = ?,
+                    phone_number = ?, telegram_id = ?
+                WHERE id = ?""", (
                 user.firstname,
                 user.lastname,
                 user.middlename,
@@ -190,7 +186,5 @@ class SqliteUserAdapter(UserDataAdapter):
         """
         cursor = self.__connection.cursor()
         cursor = cursor.execute(
-            """DELETE FROM users
-                WHERE id = ?
-           """, [id])
+            f"DELETE FROM {self.__table_name} WHERE id = ?", [id])
         self.__connection.commit()

@@ -1,17 +1,16 @@
+import os
 import psycopg2
 from ...base_test_case import BaseTestCase
-from wakebot.adapters.postgres.user import PostgresUserAdapter
-from wakebot.entities.user import User
+from wakebot.adapters.postgres import PostgresUserAdapter
+from wakebot.entities import User
 
 
 class PostgresUserAdapterTestCase(BaseTestCase):
-    """SqliteUserAdapter class"""
+    """PostgresUserAdapter class"""
     def __init__(self):
         super().__init__()
-        self.connection = psycopg2.connect(
-            user="postgres",
-            password="*",
-            database="postgres")
+        DATABASE_URL = os.environ["DATABASE_URL"]
+        self.connection = psycopg2.connect(DATABASE_URL)
 
     def setUp(self):
         self.drop_table()

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 class Bot:
 
     async def send_message(self, chat_id, text, parse_mode, reply_markup=None):

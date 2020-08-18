@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from ..base_test_case import BaseTestCase
 from ..mocks.aiogram import Dispatcher
 
@@ -7,9 +5,8 @@ from datetime import date, time, timedelta
 
 from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.state import StateManager
-from wakebot.processors import RuGeneral
-from wakebot.processors.reserve import ReserveProcessor
-from wakebot.entities.reserve import Reserve
+from wakebot.processors import RuGeneral, ReserveProcessor
+from wakebot.entities import Reserve
 
 from aiogram.types import Message, CallbackQuery, Chat, User
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton

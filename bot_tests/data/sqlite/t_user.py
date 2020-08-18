@@ -1,7 +1,7 @@
 import sqlite3
 from ...base_test_case import BaseTestCase
-from wakebot.adapters.sqlite.user import SqliteUserAdapter
-from wakebot.entities.user import User
+from wakebot.adapters.sqlite import SqliteUserAdapter
+from wakebot.entities import User
 
 
 class SqliteUserAdapterTestCase(BaseTestCase):

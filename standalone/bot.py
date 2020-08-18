@@ -27,7 +27,7 @@ state_manager = StateManager(MemoryDataAdapter())
 default_processor = DefaultProcessor(dp, RuGeneral)
 connection = psycopg2.connect(DATABASE_URL)
 
-wake_adapter = PostgressWakeAdapter(connection)
+wake_adapter = PostgressWakeAdapter(connection, "wp38_wake")
 wake_processor = WakeProcessor(dp, state_manager, RuGeneral, wake_adapter)
 
 if __name__ == "__main__":

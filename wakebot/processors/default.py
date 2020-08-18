@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import Message, ParseMode
 
