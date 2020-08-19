@@ -35,7 +35,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
 
         self.supboard_adapter = SqliteSupboardAdapter(self.connection)
 
-        self.supboards = []
+        self.reserves = []
         start_time = time(datetime.today().time().hour + 1)
         for i in range(8):
             user = User(f"Firstname{i}")
@@ -46,8 +46,8 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
                                 start_time=start_time,
                                 set_count=(i + 1))
             supboard.count = i % 3
-            self.supboards.append(supboard)
-            self.supboard_adapter.append_data(supboard)
+            supboard = self.supboard_adapter.append_data(supboard)
+            self.reserves.append(supboard)
 
     def append_state(self, key, state_type="*", state="*"):
         state_data = {}
@@ -101,6 +101,26 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
     def create_main_text(self):
         return self.strings.supboard.hello_message
 
+    def create_list_text(self):
+        if not self.reserves:
+            return self.strings.reserve.list_empty
+
+        result = f"{self.strings.reserve.list_header}\n"
+        cur_date = None
+        for i in range(2, 8):
+            reserve = self.reserves[i]
+            if not cur_date or cur_date != reserve.start_date:
+                cur_date = reserve.start_date
+                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
+
+            start_time = reserve.start_time.strftime(self.strings.time_format)
+            end_time = reserve.end_time.strftime(self.strings.time_format)
+            result += f"  {i - 1}. {start_time} - {end_time}"
+            result += f" x {reserve.count}"
+            result += "\n"
+
+        return f"{result}\n{self.strings.reserve.list_footer}"
+
     def create_book_text(self, show_contact=False):
         reserve = self.state_manager.data
         result = (f"{self.strings.reserve.type_label} "
@@ -131,26 +151,6 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         result += f"{self.strings.reserve.count_label} {reserve.count}"
 
         return result
-
-    def create_list_text(self):
-        result = ""
-        cur_date = None
-        for i in range(2, 8):
-            reserve = self.supboards[i]
-            if not cur_date or cur_date != reserve.start_date:
-                cur_date = reserve.start_date
-                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
-
-            start_time = reserve.start_time.strftime(self.strings.time_format)
-            end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += f"  {start_time} - {end_time}"
-            result += f" x {reserve.count}"
-            result += "\n"
-
-        if result:
-            return f"{self.strings.reserve.list_header}\n{result}"
-        else:
-            return self.strings.reserve.list_empty
 
     async def test_cmd_supboard(self):
         """Proceed /sup command"""
@@ -243,8 +243,8 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        self.supboards[2].start_time = time(22)
-        self.state_manager.set_state(data=self.supboards[2])
+        self.reserves[2].start_time = time(22)
+        self.state_manager.set_state(data=self.reserves[2])
         await self.processor.callback_book(callback)
 
         reserve = self.state_manager.data

@@ -91,7 +91,10 @@ class SupboardProcessor(ReserveProcessor):
 
         return self.strings.supboard.hello_message
 
-    def create_book_text(self, check=True, show_contact: bool = False) -> str:
+    def create_book_text(self,
+                         reserve: Supboard,
+                         check=True,
+                         show_contact: bool = False) -> str:
         """Create a book menu text
         Args:
             check:
@@ -104,8 +107,6 @@ class SupboardProcessor(ReserveProcessor):
         Returns:
             A message text.
         """
-
-        reserve: Supboard = self.state_manager.data
 
         result = (f"{self.strings.reserve.type_label} "
                   f"{self.strings.supboard.supboard_text}\n")
@@ -137,33 +138,11 @@ class SupboardProcessor(ReserveProcessor):
 
         return result
 
-    def create_list_text(self) -> str:
-        """Create list menu"""
-
-        result = ""
-
-        rows = self.data_adapter.get_active_reserves()
-
-        cur_date = None
-
-        for reserve in rows:
-            if not cur_date or cur_date != reserve.start_date:
-                cur_date = reserve.start_date
-                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
-
-            result += self.create_reserve_text(reserve)
-            result += "\n"
-
-        if result:
-            return f"{self.strings.reserve.list_header}\n{result}"
-        else:
-            return self.strings.reserve.list_empty
-
     def create_reserve_text(self, reserve: Supboard) -> str:
         result = ""
         start_time = reserve.start_time.strftime(self.strings.time_format)
         end_time = reserve.end_time.strftime(self.strings.time_format)
-        result += f"  {start_time} - {end_time}"
+        result += f"{start_time} - {end_time}"
         result += f" x {reserve.count}"
 
         return result

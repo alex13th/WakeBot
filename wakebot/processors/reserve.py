@@ -484,7 +484,7 @@ class ReserveProcessor(StatedProcessor):
     def create_detail_message(self, reserve_id: int):
         reserve: Reserve = self.data_adapter.get_data_by_keys(reserve_id)
         text = self.create_book_text(reserve)
-        reply_markup = self.create_details_keyboard()
+        reply_markup = self.create_details_keyboard(reserve)
         state = "details"
         answer = self.strings.reserve.cancel_button_callback
 
@@ -760,11 +760,12 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_details_keyboard(self) -> InlineKeyboardMarkup:
+    def create_details_keyboard(self,
+                                reserve: Reserve) -> InlineKeyboardMarkup:
         """Create list menu InlineKeyboardMarkup
         Args:
-            reserve_list:
-                A list of reservation instances
+            reserve:
+                A reservation instances
 
         Returns:
             A InlineKeyboardMarkup instance.
@@ -773,11 +774,11 @@ class ReserveProcessor(StatedProcessor):
         buttons = []
         buttons.append(InlineKeyboardButton(
             self.strings.reserve.cancel_button,
-            callback_data="cancel"))
+            callback_data=f"cancel-{reserve.id}"))
 
         buttons.append(InlineKeyboardButton(
             self.strings.reserve.notify_button,
-            callback_data="notify"))
+            callback_data=f"notify-{reserve.id}"))
 
         buttons.append(InlineKeyboardButton(
             self.strings.back_button,

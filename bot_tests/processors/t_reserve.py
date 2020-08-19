@@ -256,6 +256,27 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         return result
 
+    def create_details_keyboard(self,
+                                reserve: Reserve) -> InlineKeyboardMarkup:
+
+        result = InlineKeyboardMarkup(row_width=1)
+        buttons = []
+        buttons.append(InlineKeyboardButton(
+            self.strings.reserve.cancel_button,
+            callback_data=f"cancel-{reserve.id}"))
+
+        buttons.append(InlineKeyboardButton(
+            self.strings.reserve.notify_button,
+            callback_data=f"notify-{reserve.id}"))
+
+        buttons.append(InlineKeyboardButton(
+            self.strings.back_button,
+            callback_data="back"))
+
+        result.add(*buttons)
+
+        return result
+
     async def test_callback_main_book(self):
         """Proceed press Book button in Main menu"""
         callback = self.test_callback_query

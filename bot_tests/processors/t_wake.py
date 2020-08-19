@@ -101,6 +101,29 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
     def create_main_text(self):
         return self.strings.wake.hello_message
 
+    def create_list_text(self):
+        if not self.reserves:
+            return self.strings.reserve.list_empty
+
+        result = f"{self.strings.reserve.list_header}\n"
+        cur_date = None
+        for i in range(2, 8):
+            reserve = self.reserves[i]
+            if not cur_date or cur_date != reserve.start_date:
+                cur_date = reserve.start_date
+                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
+
+            start_time = reserve.start_time.strftime(self.strings.time_format)
+            end_time = reserve.end_time.strftime(self.strings.time_format)
+            result += f"  {i - 1}. {start_time} - {end_time}"
+            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+                       if reserve.board else "")
+            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+                       if reserve.hydro else "")
+            result += "\n"
+
+        return f"{result}\n{self.strings.reserve.list_footer}"
+
     def create_book_text(self, show_contact=False):
         reserve = self.state_manager.data
         result = (f"{self.strings.reserve.type_label} "
@@ -369,19 +392,20 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         callback = self.test_callback_query
         callback.data = "4"
-        reply_markup = None
         state_key = "101-111-121"
-        self.append_state(state_key, "reserve", "list")
+        self.append_state(state_key, "wake", "list")
 
         checked = self.processor.check_filter(
-            callback.message, "reserve", "list")
+            callback.message, "wake", "list")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
         await self.processor.callback_list(callback)
 
-        self.check_state(state_key, "",
-                         reply_markup, "reserve", "details")
+        self.state_manager.set_state(data=self.reserves[3])
+        reply_markup = self.create_details_keyboard(reserve=self.reserves[3])
+        self.check_state(state_key, self.create_book_text(False),
+                         reply_markup, "wake", "details")
 
 
 if __name__ == "__main__":

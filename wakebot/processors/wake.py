@@ -212,9 +212,9 @@ class WakeProcessor(ReserveProcessor):
         result = (f"{self.strings.reserve.type_label} "
                   f"{self.strings.wake.wake_text}\n")
 
-        if reserve.user and show_contact:
+        if reserve.user:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
-            if reserve.user.phone_number:
+            if show_contact and reserve.user.phone_number:
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
