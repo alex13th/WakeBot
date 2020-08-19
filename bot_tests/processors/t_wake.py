@@ -35,7 +35,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         self.wake_adapter = SqliteWakeAdapter(self.connection)
 
-        self.wakes = []
+        self.reserves = []
         start_time = time(datetime.today().time().hour + 1)
         for i in range(8):
             user = User(f"Firstname{i}")
@@ -46,8 +46,8 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
                         set_count=(i + 1))
             wake.board = i % 2
             wake.hydro = i % 3
-            self.wakes.append(wake)
-            self.wake_adapter.append_data(wake)
+            wake = self.wake_adapter.append_data(wake)
+            self.reserves.append(wake)
 
     def append_state(self, key, state_type="*", state="*"):
         state_data = {}
@@ -139,29 +139,6 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
                    if reserve.hydro else "")
 
         return result
-
-    def create_list_text(self):
-        result = ""
-        cur_date = None
-        for i in range(2, 8):
-            reserve = self.wakes[i]
-            if not cur_date or cur_date != reserve.start_date:
-                cur_date = reserve.start_date
-                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
-
-            start_time = reserve.start_time.strftime(self.strings.time_format)
-            end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += f"  {start_time} - {end_time}"
-            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
-                       if reserve.board else "")
-            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
-                       if reserve.hydro else "")
-            result += "\n"
-
-        if result:
-            return f"{self.strings.reserve.list_header}\n{result}"
-        else:
-            return self.strings.reserve.list_empty
 
     async def test_cmd_wake(self):
         """Proceed /wake command"""
@@ -372,8 +349,8 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
-        self.wakes[2].start_time = time(22)
-        self.state_manager.set_state(data=self.wakes[2])
+        self.reserves[2].start_time = time(4)
+        self.state_manager.set_state(data=self.reserves[2])
         await self.processor.callback_book(callback)
 
         reserve = self.state_manager.data
@@ -386,6 +363,27 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         state_data = self.data_adapter.get_data_by_keys(state_key)
         passed, alert = self.assert_params(state_data, None)
         assert passed, alert
+
+    async def test_callback_list_details(self):
+        """Proceed press Details button in List menu"""
+        self.prepare_data()
+        self.processor.data_adapter = self.wake_adapter
+
+        callback = self.test_callback_query
+        callback.data = "4"
+        reply_markup = None
+        state_key = "101-111-121"
+        self.append_state(state_key, "reserve", "list")
+
+        checked = self.processor.check_filter(
+            callback.message, "reserve", "list")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_list(callback)
+
+        self.check_state(state_key, "",
+                         reply_markup, "reserve", "details")
 
 
 if __name__ == "__main__":

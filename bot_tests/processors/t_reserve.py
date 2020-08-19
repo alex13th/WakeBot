@@ -19,6 +19,7 @@ class ReserveProcessorTestCase(BaseTestCase):
     "ReserveProcessor class"
 
     def setUp(self):
+        self.reserves = []
         self.strings = RuGeneral
 
         self.chat = Chat()
@@ -107,7 +108,27 @@ class ReserveProcessorTestCase(BaseTestCase):
         return result
 
     def create_list_text(self):
-        return "Reserve List menu message text"
+        if not self.reserves:
+            return self.strings.reserve.list_empty
+
+        result = f"{self.strings.reserve.list_header}\n"
+        cur_date = None
+        for i in range(2, 8):
+            reserve = self.reserves[i]
+            if not cur_date or cur_date != reserve.start_date:
+                cur_date = reserve.start_date
+                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
+
+            start_time = reserve.start_time.strftime(self.strings.time_format)
+            end_time = reserve.end_time.strftime(self.strings.time_format)
+            result += f"  {i - 1}. {start_time} - {end_time}"
+            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+                       if reserve.board else "")
+            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+                       if reserve.hydro else "")
+            result += "\n"
+
+        return f"{result}\n{self.strings.reserve.list_footer}"
 
     def create_phone_text(self):
         return f"{self.create_book_text()}\n{self.strings.phone_message}"
@@ -158,7 +179,15 @@ class ReserveProcessorTestCase(BaseTestCase):
 
     def create_list_keyboard(self):
         """Create List menu InlineKeyboardMarkup"""
-        result = InlineKeyboardMarkup(row_width=1)
+        result = InlineKeyboardMarkup(row_width=5)
+        count = len(self.reserves) if self.reserves else 0
+        buttons = []
+        for i in range(count - 2):
+            buttons.append(InlineKeyboardButton(
+                str(i + 1), callback_data=str(self.reserves[i + 2].id)))
+
+        result.add(*buttons)
+
         button = InlineKeyboardButton(self.strings.back_button,
                                       callback_data='back')
         result.add(button)

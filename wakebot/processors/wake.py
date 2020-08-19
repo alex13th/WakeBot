@@ -62,7 +62,6 @@ class WakeProcessor(ReserveProcessor):
         self.register_callback_query_handler(self.callback_board, "board")
         self.register_callback_query_handler(self.callback_hydro, "hydro")
 
-        self.book_handlers["apply"] = self.book_apply
         self.book_handlers["board"] = self.book_board
         self.book_handlers["hydro"] = self.book_hydro
 
@@ -128,7 +127,8 @@ class WakeProcessor(ReserveProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text(show_contact=True)
+        reserve: Wake = self.state_manager.data
+        text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(start=0, count=3)
         state = "board"
         answer = self.strings.wake.board_button_callback
@@ -175,7 +175,8 @@ class WakeProcessor(ReserveProcessor):
             answer:
                 A callback answer text.
         """
-        text = self.create_book_text(show_contact=True)
+        reserve: Wake = self.state_manager.data
+        text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(start=0, count=3)
         state = "hydro"
         answer = self.strings.wake.hydro_button_callback
@@ -191,7 +192,10 @@ class WakeProcessor(ReserveProcessor):
 
         return self.strings.wake.hello_message
 
-    def create_book_text(self, check=True, show_contact: bool = False) -> str:
+    def create_book_text(self,
+                         reserve: Wake,
+                         check=True,
+                         show_contact: bool = False) -> str:
         """Create a book menu text
         Args:
             check:
@@ -204,8 +208,6 @@ class WakeProcessor(ReserveProcessor):
         Returns:
             A message text.
         """
-
-        reserve: Wake = self.state_manager.data
 
         result = (f"{self.strings.reserve.type_label} "
                   f"{self.strings.wake.wake_text}\n")
@@ -241,33 +243,11 @@ class WakeProcessor(ReserveProcessor):
 
         return result
 
-    def create_list_text(self) -> str:
-        """Create list menu"""
-
-        result = ""
-
-        rows = self.data_adapter.get_active_reserves()
-
-        cur_date = None
-
-        for reserve in rows:
-            if not cur_date or cur_date != reserve.start_date:
-                cur_date = reserve.start_date
-                result += f"*{cur_date.strftime(self.strings.date_format)}*\n"
-
-            result += self.create_reserve_text(reserve)
-            result += "\n"
-
-        if result:
-            return f"{self.strings.reserve.list_header}\n{result}"
-        else:
-            return self.strings.reserve.list_empty
-
     def create_reserve_text(self, reserve: Wake) -> str:
         result = ""
         start_time = reserve.start_time.strftime(self.strings.time_format)
         end_time = reserve.end_time.strftime(self.strings.time_format)
-        result += f"  {start_time} - {end_time}"
+        result += f"{start_time} - {end_time}"
         result += (f" {self.strings.wake.icon_board}x{reserve.board}"
                    if reserve.board else "")
         result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"

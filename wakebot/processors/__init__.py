@@ -21,6 +21,8 @@ class RuReserve:
 
     list_header = "*Список бронирований:*"
     list_empty = "На текущий момент нет активных бронирований"
+    list_footer = ("Для получения дополнительной информации, "
+                   "нажмите на кнопку с номером бронирования")
 
     restrict_list_header = ("⛔️ *ВНИМАНИЕ!\n"
                             "Совпадение с активными бронированиями:*")
@@ -32,6 +34,14 @@ class RuReserve:
 
     list_button = "Список бронирований"
     list_button_callback = "Список бронирований"
+
+    details_button_callback = "Бронирование отменено"
+
+    cancel_button = "❌ Отменить бронирование"
+    cancel_button_callback = "Бронирование отменено"
+
+    notify_button = "ℹ️ Оповестить"
+    notify_button_callback = "Оповещение отправлено"
 
     set_button_callback = "Выберите количество сетов"
     hour_button_callback = "Выберите количество часов"
