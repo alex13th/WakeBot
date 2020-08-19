@@ -7,6 +7,7 @@ from bot_tests.entities import SupboardTestCase
 from bot_tests.processors import DefaultProcessorTestCase
 from bot_tests.processors import ReserveProcessorTestCase
 from bot_tests.processors import WakeProcessorTestCase
+from bot_tests.processors import SupboardProcessorTestCase
 
 from bot_tests.data.sqlite import SqliteUserAdapterTestCase
 from bot_tests.data.sqlite import SqliteWakeAdapterTestCase
@@ -55,6 +56,10 @@ test_count += tests
 fail_count += fails
 
 tests, fails = WakeProcessorTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
+
+tests, fails = SupboardProcessorTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 

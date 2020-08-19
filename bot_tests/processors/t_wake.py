@@ -375,7 +375,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         await self.processor.callback_book(callback)
 
         reserve = self.state_manager.data
-        self.wake_adapter.get_data_by_keys(reserve.id)
+        reserve = self.wake_adapter.get_data_by_keys(reserve.id)
 
         passed, alert = self.assert_params(reserve.set_count, 3)
         assert passed, alert

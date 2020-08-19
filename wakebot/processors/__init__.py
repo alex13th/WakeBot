@@ -2,6 +2,7 @@ from aiogram.types import ParseMode
 from .default import DefaultProcessor
 from .reserve import ReserveProcessor
 from .wake import WakeProcessor
+from .supboard import SupboardProcessor
 
 parse_mode = ParseMode.MARKDOWN
 
@@ -36,7 +37,12 @@ class RuReserve:
     list_button = "Список бронирований"
     list_button_callback = "Список бронирований"
 
+    icon_set = "\u23f1"
+    set_button = f"{icon_set} Сет"
     set_button_callback = "Выберите количество сетов"
+
+    icon_hour = "\u23f0"
+    hour_button = f"{icon_hour} Час"
     hour_button_callback = "Выберите количество часов"
 
     apply_text = "Забронировать"
@@ -48,6 +54,7 @@ class RuReserve:
 
     type_label = "*Услуга:*"
     date_label = "*Дата:*"
+    count_label = "*Количество:*"
 
     start_label = "*Время начала:*"
     end_label = "*Время окончания:*"
@@ -82,10 +89,18 @@ class RuWake:
     hydro_button_callback = "Аренда гидрокостюма"
 
 
+class RuSupboard:
+    hello_message = ("*Сапборд - современно и душевно!*"
+                     "\nРекомендуем перед бронированием посмотреть список"
+                     " активных бронирований.")
+    supboard_text = "Сапборд"
+
+
 class RuGeneral:
     default = RuDefault
     reserve = RuReserve
     wake = RuWake
+    supboard = RuSupboard
 
     parse_mode = ParseMode.MARKDOWN
 
@@ -120,4 +135,4 @@ class RuGeneral:
 
 
 if __name__ == "__main__":
-    DefaultProcessor, ReserveProcessor, WakeProcessor
+    DefaultProcessor, ReserveProcessor, WakeProcessor, SupboardProcessor
