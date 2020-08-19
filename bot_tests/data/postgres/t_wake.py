@@ -1,19 +1,21 @@
-import sqlite3
+import os
+import psycopg2
 from datetime import datetime, date, time, timedelta
 from ...base_test_case import BaseTestCase
-from wakebot.adapters.sqlite import SqliteWakeAdapter
+from wakebot.adapters.postgres import PostgressWakeAdapter
 from wakebot.entities import Wake, User
 
 
-class SqliteWakeAdapterTestCase(BaseTestCase):
-    """SqliteWakeAdapter class"""
+class PostgresWakeAdapterTestCase(BaseTestCase):
+    """PostgresWakeAdapter class"""
     def __init__(self):
         super().__init__()
-        self.connection = sqlite3.connect("bot_tests/data/sqlite/wake.db")
+        DATABASE_URL = os.environ["DATABASE_URL"]
+        self.connection = psycopg2.connect(DATABASE_URL)
 
     def setUp(self):
         self.drop_table()
-        self.adapter = SqliteWakeAdapter(self.connection)
+        self.adapter = PostgressWakeAdapter(self.connection)
         self.user = User("Firstname", telegram_id=586)
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)

@@ -1,19 +1,20 @@
 from ..base_test_case import BaseTestCase
 from datetime import date, time, datetime, timedelta
 
-from wakebot.entities import Reserve, User
+from wakebot.entities import Supboard, User
 
 
-class ReserveTestCase(BaseTestCase):
-    """Тесты модуля произвольного резервирования """
+class SupboardTestCase(BaseTestCase):
+    """A Supboard class tests """
 
     def setUp(self):
         self.user = User("Firstname")
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
-        self.minutes = 5  # продолжительность
-        self.reserve = Reserve(self.user, self.start_date,
-                               self.start_time)
+        self.minutes = 30  # продолжительность
+        self.set_count = 1
+        self.reserve = Supboard(self.user, self.start_date, self.start_time,
+                                set_count=1, count=2)
 
     def check_reserve(self, reserve, start_reserve, end_reserve,
                       minutes, user):
@@ -35,6 +36,9 @@ class ReserveTestCase(BaseTestCase):
         assert passed, alert
         passed, alert = self.assert_params(reserve.minutes,
                                            minutes)
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.count,
+                                           2)
         assert passed, alert
         passed, alert = self.assert_params(reserve.user,
                                            user)
@@ -83,16 +87,16 @@ class ReserveTestCase(BaseTestCase):
         user = self.user
 
         # Изменяет окончание
-        minutes = 40
+        minutes = 120
         start_reserve = start
-        end_reserve = start + timedelta(minutes=40)
-        reserve.set_count = 8
+        end_reserve = start + timedelta(minutes=120)
+        reserve.set_count = 4
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
     async def test_to_str_incomplete(self):
         """Строка незавершенного резервирования"""
-        reserve = Reserve()
+        reserve = Supboard()
         passed, alert = self.assert_params(str(reserve), "")
         assert passed, alert
 
@@ -109,7 +113,7 @@ class ReserveTestCase(BaseTestCase):
     async def test_to_str_multiday(self):
         """Строка многодневного резервирования"""
         reserve = self.reserve
-        reserve.set_count = 300
+        reserve.set_count = 150
 
         reserve_str = "{} {} - {} {}".format(reserve.start_date,
                                              reserve.start_time,
@@ -120,66 +124,13 @@ class ReserveTestCase(BaseTestCase):
 
     async def test_equal(self):
         """Реализация сравнения резервирований"""
-        reserve1 = Reserve(self.user, self.start_date,
-                           self.start_time)
+        reserve1 = Supboard(self.user, self.start_date, self.start_time,
+                            set_count=1, count=2)
 
         passed, alert = self.assert_params(reserve1, self.reserve)
         assert passed, alert
 
-        reserve1 = Reserve(self.user, self.start_date,
-                           self.start_time, set_count=2)
+        reserve1 = Supboard(self.user, self.start_date,
+                            self.start_time, set_count=3)
         passed, alert = self.assert_params(reserve1, self.reserve)
         assert not passed, alert
-
-    async def test_check_concurrent(self):
-        """Реализация сравнения резервирований"""
-        start_time = time(12, 00)
-        reserve1 = Reserve(self.user, start_date=self.start_date,
-                           start_time=start_time, count=2, set_count=12)
-        reserve2 = Reserve(self.user, start_date=self.start_date,
-                           count=3, set_count=3)
-
-        reserve2.start_time = time(11, 30)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 2)
-        assert passed, alert
-
-        reserve2.start_time = time(11, 45)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 2)
-        assert passed, alert
-
-        reserve2.start_time = time(11, 55)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 5)
-        assert passed, alert
-
-        reserve2.start_time = time(12, 00)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 5)
-        assert passed, alert
-
-        reserve2.start_time = time(12, 10)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 5)
-        assert passed, alert
-
-        reserve2.start_time = time(12, 45)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 5)
-        assert passed, alert
-
-        reserve2.start_time = time(12, 55)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 5)
-        assert passed, alert
-
-        reserve2.start_time = time(13, 00)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 2)
-        assert passed, alert
-
-        reserve2.start_time = time(13, 5)
-        conflict_count = reserve1.check_concurrent(reserve2)
-        passed, alert = self.assert_params(conflict_count, 2)
-        assert passed, alert

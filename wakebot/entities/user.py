@@ -20,6 +20,8 @@ class User:
             A string/integer telegram user id
         user_id:
             An integer internal user id.
+        is_admin:
+            A boolean flag of user admin role.
     """
 
     firstname: str
@@ -29,6 +31,7 @@ class User:
     phone_number: Optional[str]
     telegram_id: Optional[int]
     user_id: Optional[int]
+    is_admin: Optional[bool]
 
     def __init__(self,
                  firstname: str,
@@ -37,7 +40,8 @@ class User:
                  displayname: Optional[str] = None,
                  phone_number: Optional[str] = None,
                  telegram_id: Optional[int] = None,
-                 user_id: Optional[int] = None):
+                 user_id: Optional[int] = None,
+                 is_admin: bool = False):
         """User data class
 
         Args:
@@ -56,6 +60,8 @@ class User:
                 A string/integer telegram user id
             user_id:
                 An integer internal user id.
+            is_admin:
+                A boolean flag of user admin role.
         """
         self.firstname = firstname
         self.lastname = lastname
@@ -64,6 +70,7 @@ class User:
         self.phone_number = phone_number
         self.telegram_id = telegram_id
         self.user_id = user_id
+        self.is_admin = is_admin
 
     @property
     def displayname(self) -> str:
@@ -82,8 +89,9 @@ class User:
 
     def __copy__(self):
         return User(
-            self.firstname, self.lastname, self.middlename, self._displayname,
-            self.phone_number, self.telegram_id, self.user_id)
+            self.firstname, self.lastname, self.middlename,
+            self._displayname, self.phone_number,
+            self.telegram_id, self.user_id, is_admin=self.is_admin)
 
     def __deepcopy__(self):
         return self.__copy__()

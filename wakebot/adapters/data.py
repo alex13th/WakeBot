@@ -1,5 +1,6 @@
 from typing import Union
 from ..entities.reserve import Reserve
+from ..entities.user import User
 
 
 class BaseDataAdapter:
@@ -191,6 +192,72 @@ class ReserveDataAdapter:
         return NotImplementedError
 
     def update_data(self, reserve: Reserve):
+        """Append new data to storage
+
+        Args:
+            reserve:
+                An instance of entity wake class.
+        """
+        return NotImplementedError
+
+    def remove_data_by_keys(self, id: int):
+        """Remove data from storage by a keys
+
+        Args:
+            id:
+                An identifier of wake reservation
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
+
+class UserDataAdapter:
+    """A base user adapter class"""
+
+    def get_data(self) -> iter:
+        """Get a full set of data from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
+    def get_data_by_keys(self, id: int) -> Union[User, None]:
+        """Get a set of data from storage by a keys
+
+        Args:
+            id:
+                An identifier of wake reservation
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
+    def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
+        """Get a set of data from storage by a keys
+
+        Args:
+            id:
+                An identifier of wake reservation
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError
+
+    def append_data(self, user: User) -> User:
+        """Append new data to storage
+
+        Args:
+            reserve:
+                An instance of entity wake class.
+        """
+        return NotImplementedError
+
+    def update_data(self, user: User):
         """Append new data to storage
 
         Args:

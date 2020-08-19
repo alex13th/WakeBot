@@ -365,9 +365,9 @@ class ReserveProcessor(StatedProcessor):
                                                text=text,
                                                parse_mode=self.parse_mode)
         self.state_manager.get_state(callback_query.message.chat.id,
-                                reserve.user.telegram_id)
+                                     reserve.user.telegram_id)
         self.state_manager.set_state(state_type=self.state_type, state=state,
-                                data=reserve)
+                                     data=reserve)
 
     async def callback_query_action(self,
                                     callback_query: CallbackQuery,
@@ -706,7 +706,8 @@ class ReserveProcessor(StatedProcessor):
             A message text.
         """
         reserve: Reserve = self.state_manager.data
-        return f"{self.create_book_text(reserve)}\n{self.strings.phone_message}"
+        return (f"{self.create_book_text(reserve)}\n"
+                f"{self.strings.phone_message}")
 
     def create_reserve_text(self, reserve: Reserve) -> str:
         result = ""

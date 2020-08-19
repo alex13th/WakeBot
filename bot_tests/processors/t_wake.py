@@ -6,12 +6,10 @@ from ..processors.t_reserve import ReserveProcessorTestCase
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from wakebot.adapters.data import MemoryDataAdapter
-from wakebot.adapters.sqlite.wake import SqliteWakeAdapter
+from wakebot.adapters.sqlite import SqliteWakeAdapter
 from wakebot.adapters.state import StateManager
-from wakebot.processors import RuGeneral
-from wakebot.processors.wake import WakeProcessor
-from wakebot.entities.wake import Wake
-from wakebot.entities.user import User
+from wakebot.processors import RuGeneral, WakeProcessor
+from wakebot.entities import Wake, User
 
 
 class WakeProcessorTestCase(ReserveProcessorTestCase):
@@ -30,7 +28,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         self.connection = sqlite3.connect("bot_tests/data/sqlite/wake.db")
         cursor = self.connection.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS wake")
+        cursor.execute("DROP TABLE IF EXISTS wake_reserves")
         self.connection.commit()
 
         self.wake_adapter = SqliteWakeAdapter(self.connection)
@@ -354,7 +352,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         await self.processor.callback_book(callback)
 
         reserve = self.state_manager.data
-        self.wake_adapter.get_data_by_keys(reserve.id)
+        reserve = self.wake_adapter.get_data_by_keys(reserve.id)
 
         passed, alert = self.assert_params(reserve.set_count, 3)
         assert passed, alert

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 from ..base_test_case import BaseTestCase
-from wakebot.entities.user import User
+from wakebot.entities import User
 
 
 class UserTestCase(BaseTestCase):
@@ -23,6 +22,8 @@ class UserTestCase(BaseTestCase):
         passed, alert = self.assert_params(user.telegram_id, 9876)
         assert passed, alert
         passed, alert = self.assert_params(user.user_id, 3456)
+        assert passed, alert
+        passed, alert = self.assert_params(user.is_admin, False)
         assert passed, alert
 
     async def test_set_properties(self):
