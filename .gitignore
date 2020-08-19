@@ -4,6 +4,6 @@ __pycache__
 .env
 .vscode
 *.html
-# config.py
+config.py
 *.db
 env
