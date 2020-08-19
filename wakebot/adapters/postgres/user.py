@@ -31,7 +31,8 @@ class PostgresUserAdapter(UserDataAdapter):
                     lastname varchar(20),
                     middlename varchar(20),
                     displayname varchar(60),
-                    phone_number varchar(20))""")
+                    phone_number varchar(20),
+                    is_admin boolean)""")
 
             self.connection.commit()
 
@@ -44,7 +45,7 @@ class PostgresUserAdapter(UserDataAdapter):
         with self.__connection.cursor() as cursor:
             cursor.execute(
                 """SELECT id, firstname, lastname, middlename, displayname,
-                   telegram_id, phone_number"""
+                   telegram_id, phone_number, is_admin"""
                 f" FROM {self.__table_name}")
             for row in cursor:
                 yield User(
@@ -54,7 +55,8 @@ class PostgresUserAdapter(UserDataAdapter):
                     middlename=row[3],
                     displayname=row[4],
                     telegram_id=row[5],
-                    phone_number=row[6]
+                    phone_number=row[6],
+                    is_admin=row[7]
                 )
 
     def get_data_by_keys(self, id: int) -> Union[User, None]:
@@ -70,8 +72,8 @@ class PostgresUserAdapter(UserDataAdapter):
         with self.__connection.cursor() as cursor:
             cursor.execute(
                 """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, phone_number"""
+                    id, firstname, lastname, middlename, displayname,
+                    telegram_id, phone_number, is_admin"""
                 f" FROM {self.__table_name}"
                 "    WHERE id = %s", [id])
 
@@ -88,7 +90,8 @@ class PostgresUserAdapter(UserDataAdapter):
                 middlename=row[3],
                 displayname=row[4],
                 telegram_id=row[5],
-                phone_number=row[6]
+                phone_number=row[6],
+                is_admin=row[7]
             )
 
     def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
@@ -104,8 +107,8 @@ class PostgresUserAdapter(UserDataAdapter):
         with self.__connection.cursor() as cursor:
             cursor.execute(
                 """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, phone_number"""
+                    id, firstname, lastname, middlename, displayname,
+                    telegram_id, phone_number, is_admin"""
                 f" FROM {self.__table_name}"
                 "  WHERE telegram_id = %s", [telegram_id])
 
@@ -122,7 +125,8 @@ class PostgresUserAdapter(UserDataAdapter):
                 middlename=row[3],
                 displayname=row[4],
                 telegram_id=row[5],
-                phone_number=row[6]
+                phone_number=row[6],
+                is_admin=row[7]
             )
 
     def append_data(self, user: User) -> User:
@@ -134,10 +138,10 @@ class PostgresUserAdapter(UserDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                f"INSERT INTO {self.__table_name}(telegram_id, firstname, "
-                """lastname,
-                    middlename, displayname, phone_number)
-                    VALUES(%s, %s, %s, %s, %s, %s)
+                f"  INSERT INTO {self.__table_name}("
+                """     telegram_id, firstname, lastname, middlename,
+                        displayname, phone_number, is_admin)
+                    VALUES(%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     user.telegram_id,
@@ -145,7 +149,8 @@ class PostgresUserAdapter(UserDataAdapter):
                     user.lastname,
                     user.middlename,
                     user.displayname,
-                    user.phone_number)
+                    user.phone_number,
+                    user.is_admin)
             )
 
             result = user.__deepcopy__()
@@ -164,9 +169,10 @@ class PostgresUserAdapter(UserDataAdapter):
         """
         with self.__connection.cursor() as cursor:
             cursor.execute(
-                f"UPDATE {self.__table_name} SET "
-                """ firstname = %s, lastname = %s, middlename = %s,
-                    displayname = %s, phone_number = %s, telegram_id = %s
+                f"  UPDATE {self.__table_name} SET "
+                """     firstname = %s, lastname = %s, middlename = %s,
+                        displayname = %s, phone_number = %s,
+                        telegram_id = %s, is_admin = %s
                     WHERE id = %s
                 """, (
                     user.firstname,
@@ -175,6 +181,7 @@ class PostgresUserAdapter(UserDataAdapter):
                     user.displayname,
                     user.phone_number,
                     user.telegram_id,
+                    user.is_admin,
                     user.user_id
                 ))
             self.__connection.commit()

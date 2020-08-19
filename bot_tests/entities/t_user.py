@@ -24,6 +24,8 @@ class UserTestCase(BaseTestCase):
         assert passed, alert
         passed, alert = self.assert_params(user.user_id, 3456)
         assert passed, alert
+        passed, alert = self.assert_params(user.is_admin, False)
+        assert passed, alert
 
     async def test_set_properties(self):
         user = User("Firstname")
