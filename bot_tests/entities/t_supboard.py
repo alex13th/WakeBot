@@ -1,20 +1,20 @@
 from ..base_test_case import BaseTestCase
 from datetime import date, time, datetime, timedelta
 
-from wakebot.entities import Wake, User
+from wakebot.entities import Supboard, User
 
 
-class WakeTestCase(BaseTestCase):
-    """A Wake class tests """
+class SupboardTestCase(BaseTestCase):
+    """A Supboard class tests """
 
     def setUp(self):
         self.user = User("Firstname")
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
         self.minutes = 30  # продолжительность
-        self.set_count = 3
-        self.reserve = Wake(self.user, self.start_date, self.start_time,
-                            set_count=3, board=1, hydro=1)
+        self.set_count = 1
+        self.reserve = Supboard(self.user, self.start_date, self.start_time,
+                                set_count=1, count=2)
 
     def check_reserve(self, reserve, start_reserve, end_reserve,
                       minutes, user):
@@ -36,6 +36,9 @@ class WakeTestCase(BaseTestCase):
         assert passed, alert
         passed, alert = self.assert_params(reserve.minutes,
                                            minutes)
+        assert passed, alert
+        passed, alert = self.assert_params(reserve.count,
+                                           2)
         assert passed, alert
         passed, alert = self.assert_params(reserve.user,
                                            user)
@@ -84,16 +87,16 @@ class WakeTestCase(BaseTestCase):
         user = self.user
 
         # Изменяет окончание
-        minutes = 40
+        minutes = 120
         start_reserve = start
-        end_reserve = start + timedelta(minutes=40)
+        end_reserve = start + timedelta(minutes=120)
         reserve.set_count = 4
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
 
     async def test_to_str_incomplete(self):
         """Строка незавершенного резервирования"""
-        reserve = Wake()
+        reserve = Supboard()
         passed, alert = self.assert_params(str(reserve), "")
         assert passed, alert
 
@@ -121,13 +124,13 @@ class WakeTestCase(BaseTestCase):
 
     async def test_equal(self):
         """Реализация сравнения резервирований"""
-        reserve1 = Wake(self.user, self.start_date, self.start_time,
-                        set_count=3, board=1, hydro=1)
+        reserve1 = Supboard(self.user, self.start_date, self.start_time,
+                            set_count=1, count=2)
 
         passed, alert = self.assert_params(reserve1, self.reserve)
         assert passed, alert
 
-        reserve1 = Wake(self.user, self.start_date,
-                        self.start_time,)
+        reserve1 = Supboard(self.user, self.start_date,
+                            self.start_time, set_count=3)
         passed, alert = self.assert_params(reserve1, self.reserve)
         assert not passed, alert

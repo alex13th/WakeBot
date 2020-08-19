@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from ..base_test_case import BaseTestCase
 from wakebot.entities import User
 
