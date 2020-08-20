@@ -107,7 +107,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         result = f"{self.strings.reserve.list_header}\n"
         cur_date = None
-        for i in range(2, 8):
+        for i in range(2, len(self.reserves)):
             reserve = self.reserves[i]
             if not cur_date or cur_date != reserve.start_date:
                 cur_date = reserve.start_date
@@ -406,6 +406,36 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         reply_markup = self.create_details_keyboard(reserve=self.reserves[3])
         self.check_state(state_key, self.create_book_text(False),
                          reply_markup, "wake", "details")
+
+    async def test_callback_details_cancel(self):
+        """Proceed press Cancel button in Details menu"""
+        self.prepare_data()
+        self.processor.data_adapter = self.wake_adapter
+
+        callback = self.test_callback_query
+
+        callback.data = "cancel-4"
+        state_key = "101-111-121"
+        self.append_state(state_key, "wake", "details")
+
+        checked = self.processor.check_filter(
+            callback.message, "wake", "details")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+        reserve = self.wake_adapter.get_data_by_keys(4)
+
+        await self.processor.callback_details(callback)
+
+        del self.reserves[3]
+        reserve = self.wake_adapter.get_data_by_keys(4)
+
+        passed, alert = self.assert_params(reserve, None)
+        assert passed, alert
+
+        text = self.create_list_text()
+        reply_markup = self.create_list_keyboard()
+        self.check_state(state_key, text,
+                         reply_markup, "wake", "list")
 
 
 if __name__ == "__main__":

@@ -157,6 +157,10 @@ class SupboardProcessor(ReserveProcessor):
         """
         result = InlineKeyboardMarkup(row_width=6)
 
+        button = InlineKeyboardButton(self.strings.reserve.count_button,
+                                      callback_data='count')
+        result.add(button)
+
         # Adding Date- and Time- buttons by a row for each
         button = InlineKeyboardButton(self.strings.date_button,
                                       callback_data='date')
@@ -175,11 +179,6 @@ class SupboardProcessor(ReserveProcessor):
         button = InlineKeyboardButton(self.strings.phone_button,
                                       callback_data='phone')
         result.add(button)
-
-        buttons = [InlineKeyboardButton(f"{i}", callback_data=str(i))
-                   for i in range(1, self.max_count + 1)]
-
-        result.add(*buttons)
 
         if self.state_manager.data:
             if ready:

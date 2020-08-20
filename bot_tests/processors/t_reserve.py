@@ -147,6 +147,10 @@ class ReserveProcessorTestCase(BaseTestCase):
         """Create book menu InlineKeyboardMarkup"""
         result = InlineKeyboardMarkup(row_width=1)
 
+        button = InlineKeyboardButton(self.strings.reserve.count_button,
+                                      callback_data='count')
+        result.add(button)
+
         # Adding Date- and Time- buttons by a row for each
         button = InlineKeyboardButton(self.strings.date_button,
                                       callback_data='date')

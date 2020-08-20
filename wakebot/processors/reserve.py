@@ -74,6 +74,7 @@ class ReserveProcessor(StatedProcessor):
         self.register_callback_query_handler(self.callback_date, "date")
         self.register_callback_query_handler(self.callback_hour, "hour")
         self.register_callback_query_handler(self.callback_minute, "minute")
+        self.register_callback_query_handler(self.callback_count, "count")
         self.register_callback_query_handler(self.callback_set, "set")
         self.register_callback_query_handler(self.callback_set_hour,
                                              "set_hour")
@@ -84,6 +85,7 @@ class ReserveProcessor(StatedProcessor):
         self.book_handlers["date"] = self.book_date
         self.book_handlers["time"] = self.book_time
         self.book_handlers["phone"] = self.book_phone
+        self.book_handlers["count"] = self.book_count
         self.book_handlers["set"] = self.book_set
         self.book_handlers["set_hour"] = self.book_set_hour
         self.book_handlers["apply"] = self.book_apply
@@ -241,6 +243,28 @@ class ReserveProcessor(StatedProcessor):
         state_manager.set_state(state=state)
         await callback_query.answer(answer)
 
+    async def callback_count(self, callback_query: CallbackQuery):
+        """Set menu CallbackQuery handler"""
+        # State manager updated by StatedProcessor check_filter method
+
+        text = reply_markup = state = None
+        state_manager = self.state_manager
+
+        if callback_query.data == "back":
+            text, reply_markup, state, answer = self.create_book_message()
+        elif callback_query.data.isdigit():
+            self.state_manager.data.count = int(callback_query.data)
+            text, reply_markup, state, answer = self.create_book_message()
+        else:
+            await callback_query.answer(self.strings.callback_error)
+            return
+
+        await callback_query.message.edit_text(text,
+                                               reply_markup=reply_markup,
+                                               parse_mode=self.parse_mode)
+        state_manager.set_state(state=state)
+        await callback_query.answer(answer)
+
     async def callback_set(self, callback_query: CallbackQuery):
         """Set menu CallbackQuery handler"""
         # State manager updated by StatedProcessor check_filter method
@@ -315,10 +339,24 @@ class ReserveProcessor(StatedProcessor):
         if callback_query.data == "back":
             text, reply_markup, state, answer = self.create_list_message()
 
-        elif callback_query.data == "cancel":
-            raise NotImplementedError
-        elif callback_query.data == "notify":
-            raise NotImplementedError
+        elif callback_query.data.startswith("cancel-"):
+            reserve_id = int(callback_query.data[7:])
+            self.data_adapter.remove_data_by_keys(reserve_id)
+            text, reply_markup, state, answer = self.create_list_message()
+            answer = self.strings.reserve.cancel_button_callback
+
+        elif callback_query.data.startswith("notify-"):
+            reserve_id = int(callback_query.data[7:])
+            reserve = self.data_adapter.get_data_by_keys(reserve_id)
+
+            notify_text = self.strings.reserve.notify_message
+            notify_text += f"\n\n{self.create_book_text(reserve)}"
+            await self.dispatcher.bot.send_message(reserve.user.telegram_id,
+                                                   notify_text,
+                                                   parse_mode=self.parse_mode)
+
+            text, reply_markup, state, answer = self.create_list_message()
+            answer = self.strings.reserve.notify_button_callback
 
         await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
@@ -340,6 +378,11 @@ class ReserveProcessor(StatedProcessor):
         """Proceed Time button in Book menu"""
         await self.callback_query_action(callback_query,
                                          *self.create_hour_message())
+
+    async def book_count(self, callback_query: CallbackQuery):
+        """Proceed Set button in Book menu"""
+        await self.callback_query_action(callback_query,
+                                         *self.create_count_message())
 
     async def book_set(self, callback_query: CallbackQuery):
         """Proceed Set button in Book menu"""
@@ -550,6 +593,27 @@ class ReserveProcessor(StatedProcessor):
         reply_markup = self.create_minute_keyboard()
         state = "minute"
         answer = self.strings.minute_button_callback
+
+        return (text, reply_markup, state, answer)
+
+    def create_count_message(self):
+        """Prepare a Count menu message
+
+        Returns:
+            text:
+                A new message text.
+            reply_markup:
+                A new keyboard reple_markup.
+            state:
+                A new message state.
+            answer:
+                A callback answer text.
+        """
+        reserve: Reserve = self.state_manager.data
+        text = self.create_book_text(reserve, show_contact=True)
+        reply_markup = self.create_count_keyboard(self.max_count)
+        state = "count"
+        answer = self.strings.reserve.count_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -797,6 +861,10 @@ class ReserveProcessor(StatedProcessor):
             A InlineKeyboardMarkup instance.
         """
         result = InlineKeyboardMarkup(row_width=1)
+
+        button = InlineKeyboardButton(self.strings.reserve.count_button,
+                                      callback_data='count')
+        result.add(button)
 
         # Adding Date- and Time- buttons by a row for each
         button = InlineKeyboardButton(self.strings.date_button,

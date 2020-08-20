@@ -39,13 +39,15 @@ class RuReserve:
     list_button = "Список бронирований"
     list_button_callback = "Список бронирований"
 
-    details_button_callback = "Бронирование отменено"
+    details_button_callback = "Информация по бронированию"
 
     cancel_button = "❌ Отменить бронирование"
     cancel_button_callback = "Бронирование отменено"
 
     notify_button = "ℹ️ Оповестить"
     notify_button_callback = "Оповещение отправлено"
+    notify_message = ("Обратитесь к админстратору для уточнения информации"
+                      " по бронированию")
 
     icon_set = "\u23f1"
     set_button = f"{icon_set} Сет"
@@ -66,6 +68,8 @@ class RuReserve:
     type_label = "*Услуга:*"
     date_label = "*Дата:*"
     count_label = "*Количество:*"
+    count_button = "Количество"
+    count_button_callback = "Выберите количество"
 
     start_label = "*Время начала:*"
     end_label = "*Время окончания:*"
