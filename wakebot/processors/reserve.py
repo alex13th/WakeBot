@@ -348,7 +348,7 @@ class ReserveProcessor(StatedProcessor):
         text = reply_markup = state = None
 
         if callback_query.data == "back":
-            text, reply_markup, state, answer = self.create_list_message()
+            text, reply_markup, state, answer = self.create_list_message(True)
 
         elif callback_query.data.startswith("cancel-"):
             reserve_id = int(callback_query.data[7:])
@@ -540,7 +540,7 @@ class ReserveProcessor(StatedProcessor):
 
     def create_detail_message(self, reserve_id: int):
         reserve: Reserve = self.data_adapter.get_data_by_keys(reserve_id)
-        text = self.create_book_text(reserve)
+        text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_details_keyboard(reserve)
         state = "details"
         answer = self.strings.reserve.cancel_button_callback

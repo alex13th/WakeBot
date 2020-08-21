@@ -409,7 +409,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         self.state_manager.set_state(data=self.reserves[3])
         reply_markup = self.create_details_keyboard(reserve=self.reserves[3])
-        self.check_state(state_key, self.create_book_text(False),
+        self.check_state(state_key, self.create_book_text(True),
                          reply_markup, "wake", "details")
 
     async def test_callback_details_cancel(self):

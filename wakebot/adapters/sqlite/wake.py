@@ -88,7 +88,8 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         cursor = self.__connection.cursor()
         rows = list(cursor.execute(
             """SELECT id, firstname, lastname, middlename, displayname,
-                    telegram_id, start, set_type_id, set_count, board, hydro"""
+                    telegram_id, phone_number, start, set_type_id, set_count,
+                    board, hydro"""
             f" FROM {self.__table_name} WHERE id = ?", [id]))
 
         if len(rows) == 0:
@@ -100,13 +101,14 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         user.middlename = row[3]
         user.displayname = row[4]
         user.telegram_id = row[5]
-        start = datetime.fromtimestamp(row[6])
+        user.phone_number = row[6]
+        start = datetime.fromtimestamp(row[7])
 
         return Wake(
             id=row[0], user=user,
             start_date=start.date(), start_time=start.time(),
-            set_type_id=row[7], set_count=row[8],
-            board=row[9], hydro=row[10])
+            set_type_id=row[8], set_count=row[9],
+            board=row[10], hydro=row[11])
 
     def get_concurrent_reserves(self, reserve: Wake) -> iter:
         """Get an concurrent reservations from storage
