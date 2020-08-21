@@ -2,14 +2,15 @@ import sqlite3
 from datetime import datetime, date, time, timedelta
 from ..mocks.aiogram import Dispatcher
 from ..processors.t_reserve import ReserveProcessorTestCase
+from .data import users as sup_users
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from wakebot.adapters.data import MemoryDataAdapter
-from wakebot.adapters.sqlite import SqliteSupboardAdapter
+from wakebot.adapters.sqlite import SqliteSupboardAdapter, SqliteUserAdapter
 from wakebot.adapters.state import StateManager
 from wakebot.processors import RuGeneral, SupboardProcessor
-from wakebot.entities import Supboard, User
+from wakebot.entities import Supboard
 
 
 class SupboardProcessorTestCase(ReserveProcessorTestCase):
@@ -19,10 +20,10 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         super().setUp()
         self.strings = RuGeneral
 
-        dp = Dispatcher()
+        self.dp = Dispatcher()
         self.data_adapter = MemoryDataAdapter()
         self.state_manager = StateManager(self.data_adapter)
-        self.processor = SupboardProcessor(dp,
+        self.processor = SupboardProcessor(self.dp,
                                            self.state_manager, self.strings)
         self.processor.max_count = 6
 
@@ -31,16 +32,19 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         cursor = self.connection.cursor()
 
         cursor.execute("DROP TABLE IF EXISTS sup_reserves")
+        cursor.execute("DROP TABLE IF EXISTS users")
         self.connection.commit()
 
         self.supboard_adapter = SqliteSupboardAdapter(self.connection)
+        self.user_adapter = SqliteUserAdapter(self.connection)
+
+        for user in sup_users:
+            self.user_adapter.append_data(user)
 
         self.reserves = []
         start_time = time(datetime.today().time().hour + 1)
         for i in range(8):
-            user = User(f"Firstname{i}")
-            user.lastname = f"Lastname{i}"
-            user.telegram_id = int(str(i)*8)
+            user = sup_users[i % 5]
             start_date = date.today() + timedelta(i - 2)
             supboard = Supboard(user, start_date=start_date,
                                 start_time=start_time,
@@ -48,6 +52,10 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
             supboard.count = i % 3
             supboard = self.supboard_adapter.append_data(supboard)
             self.reserves.append(supboard)
+        self.processor = SupboardProcessor(self.dp, self.state_manager,
+                                           self.strings, self.supboard_adapter,
+                                           self.user_adapter)
+        self.processor.max_count = 6
 
     def append_state(self, key, state_type="*", state="*"):
         state_data = {}
@@ -118,7 +126,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
             result += f" x {reserve.count}"
             result += "\n"
 
-        return f"{result}\n{self.strings.reserve.list_footer}"
+        return result
 
     def create_book_text(self, show_contact=False):
         reserve = self.state_manager.data
@@ -194,10 +202,9 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_main_list(self):
         """Proceed press List button in Main menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.supboard_adapter
         callback = self.test_callback_query
         callback.data = "list"
-        reply_markup = self.create_list_keyboard()
+        reply_markup = self.create_list_keyboard(True)
         state_key = "101-111-121"
         self.append_state(state_key, "sup", "main")
 
@@ -231,7 +238,6 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_book_apply(self):
         """Proceed Apply button in Book menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.supboard_adapter
         callback = self.test_callback_query
         callback.data = "apply"
         state_key = "101-111-121"
@@ -260,7 +266,6 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_details_cancel(self):
         """Proceed press Cancel button in Details menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.supboard_adapter
 
         callback = self.test_callback_query
 
@@ -283,7 +288,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         assert passed, alert
 
         text = self.create_list_text()
-        reply_markup = self.create_list_keyboard()
+        reply_markup = self.create_list_keyboard(True)
         self.check_state(state_key, text,
                          reply_markup, "sup", "list")
 

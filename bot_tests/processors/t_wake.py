@@ -2,14 +2,15 @@ import sqlite3
 from datetime import datetime, date, time, timedelta
 from ..mocks.aiogram import Dispatcher
 from ..processors.t_reserve import ReserveProcessorTestCase
+from .data import users as wake_users
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from wakebot.adapters.data import MemoryDataAdapter
-from wakebot.adapters.sqlite import SqliteWakeAdapter
+from wakebot.adapters.sqlite import SqliteWakeAdapter, SqliteUserAdapter
 from wakebot.adapters.state import StateManager
 from wakebot.processors import RuGeneral, WakeProcessor
-from wakebot.entities import Wake, User
+from wakebot.entities import Wake
 
 
 class WakeProcessorTestCase(ReserveProcessorTestCase):
@@ -19,26 +20,30 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         super().setUp()
         self.strings = RuGeneral
 
-        dp = Dispatcher()
+        self.dp = Dispatcher()
         self.data_adapter = MemoryDataAdapter()
         self.state_manager = StateManager(self.data_adapter)
-        self.processor = WakeProcessor(dp, self.state_manager, self.strings)
+        self.processor = WakeProcessor(self.dp, self.state_manager,
+                                       self.strings)
 
     def prepare_data(self):
         self.connection = sqlite3.connect("bot_tests/data/sqlite/wake.db")
         cursor = self.connection.cursor()
 
         cursor.execute("DROP TABLE IF EXISTS wake_reserves")
+        cursor.execute("DROP TABLE IF EXISTS users")
         self.connection.commit()
 
         self.wake_adapter = SqliteWakeAdapter(self.connection)
+        self.user_adapter = SqliteUserAdapter(self.connection)
+
+        for user in wake_users:
+            self.user_adapter.append_data(user)
 
         self.reserves = []
         start_time = time(datetime.today().time().hour + 1)
         for i in range(8):
-            user = User(f"Firstname{i}")
-            user.lastname = f"Lastname{i}"
-            user.telegram_id = int(str(i)*8)
+            user = wake_users[i % 5]
             start_date = date.today() + timedelta(i - 2)
             wake = Wake(user, start_date=start_date, start_time=start_time,
                         set_count=(i + 1))
@@ -46,6 +51,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
             wake.hydro = i % 3
             wake = self.wake_adapter.append_data(wake)
             self.reserves.append(wake)
+        self.processor = WakeProcessor(self.dp, self.state_manager,
+                                       self.strings,
+                                       self.wake_adapter, self.user_adapter)
 
     def append_state(self, key, state_type="*", state="*"):
         state_data = {}
@@ -122,7 +130,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
                        if reserve.hydro else "")
             result += "\n"
 
-        return f"{result}\n{self.strings.reserve.list_footer}"
+        return result
 
     def create_book_text(self, show_contact=False):
         reserve = self.state_manager.data
@@ -204,10 +212,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_main_list(self):
         """Proceed press List button in Main menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.wake_adapter
         callback = self.test_callback_query
         callback.data = "list"
-        reply_markup = self.create_list_keyboard()
+        reply_markup = self.create_list_keyboard(True)
         state_key = "101-111-121"
         self.append_state(state_key, "wake", "main")
 
@@ -359,7 +366,6 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_book_apply(self):
         """Proceed Apply button in Book menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.wake_adapter
         callback = self.test_callback_query
         callback.data = "apply"
         state_key = "101-111-121"
@@ -388,7 +394,6 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_list_details(self):
         """Proceed press Details button in List menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.wake_adapter
 
         callback = self.test_callback_query
         callback.data = "4"
@@ -410,7 +415,6 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
     async def test_callback_details_cancel(self):
         """Proceed press Cancel button in Details menu"""
         self.prepare_data()
-        self.processor.data_adapter = self.wake_adapter
 
         callback = self.test_callback_query
 
@@ -433,7 +437,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         assert passed, alert
 
         text = self.create_list_text()
-        reply_markup = self.create_list_keyboard()
+        reply_markup = self.create_list_keyboard(True)
         self.check_state(state_key, text,
                          reply_markup, "wake", "list")
 

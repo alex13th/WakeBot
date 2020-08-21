@@ -56,7 +56,7 @@ class PostgresUserAdapter(UserDataAdapter):
                     displayname=row[4],
                     telegram_id=row[5],
                     phone_number=row[6],
-                    is_admin=row[7]
+                    is_admin=bool(row[7])
                 )
 
     def get_data_by_keys(self, id: int) -> Union[User, None]:
@@ -91,7 +91,7 @@ class PostgresUserAdapter(UserDataAdapter):
                 displayname=row[4],
                 telegram_id=row[5],
                 phone_number=row[6],
-                is_admin=row[7]
+                is_admin=bool(row[7])
             )
 
     def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
@@ -126,7 +126,7 @@ class PostgresUserAdapter(UserDataAdapter):
                 displayname=row[4],
                 telegram_id=row[5],
                 phone_number=row[6],
-                is_admin=row[7]
+                is_admin=bool(row[7])
             )
 
     def append_data(self, user: User) -> User:
@@ -200,3 +200,26 @@ class PostgresUserAdapter(UserDataAdapter):
             cursor.execute(
                 f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
             self.__connection.commit()
+
+    def get_admins(self) -> iter:
+        """Get administrators list from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        with self.__connection.cursor() as cursor:
+            cursor.execute(
+                """ SELECT id, firstname, lastname, middlename, displayname,
+                        telegram_id, phone_number, is_admin"""
+                f" FROM {self.__table_name} WHERE is_admin")
+            for row in cursor:
+                yield User(
+                    user_id=row[0],
+                    firstname=row[1],
+                    lastname=row[2],
+                    middlename=row[3],
+                    displayname=row[4],
+                    telegram_id=row[5],
+                    phone_number=row[6],
+                    is_admin=bool(row[7])
+                )

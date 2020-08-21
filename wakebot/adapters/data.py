@@ -277,3 +277,11 @@ class UserDataAdapter:
             A iterator object of given data
         """
         return NotImplementedError
+
+    def get_admins(self) -> iter:
+        """Get administrators list from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        return NotImplementedError

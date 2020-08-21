@@ -43,6 +43,8 @@ class ReserveProcessorTestCase(BaseTestCase):
         callback = CallbackQuery()
         callback.answer = self.callback_answer_mock
         callback.message = message
+        callback.from_user = User()
+        callback.from_user.id = 101
         self.test_callback_query = callback
 
     async def answer_mock(self, text, parse_mode=None, reply_markup=None):
@@ -125,7 +127,7 @@ class ReserveProcessorTestCase(BaseTestCase):
                        if reserve.hydro else "")
             result += "\n"
 
-        return f"{result}\n{self.strings.reserve.list_footer}"
+        return result
 
     def create_phone_text(self):
         return f"{self.create_book_text()}\n{self.strings.phone_message}"
@@ -178,16 +180,18 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         return result
 
-    def create_list_keyboard(self):
+    def create_list_keyboard(self, admin_menu=False):
         """Create List menu InlineKeyboardMarkup"""
         result = InlineKeyboardMarkup(row_width=5)
-        count = len(self.reserves) if self.reserves else 0
-        buttons = []
-        for i in range(count - 2):
-            buttons.append(InlineKeyboardButton(
-                str(i + 1), callback_data=str(self.reserves[i + 2].id)))
 
-        result.add(*buttons)
+        if admin_menu:
+            count = len(self.reserves) if self.reserves else 0
+            buttons = []
+            for i in range(count - 2):
+                buttons.append(InlineKeyboardButton(
+                    str(i + 1), callback_data=str(self.reserves[i + 2].id)))
+
+            result.add(*buttons)
 
         button = InlineKeyboardButton(self.strings.back_button,
                                       callback_data='back')
@@ -634,6 +638,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         reply_markup = self.create_list_keyboard()
         state_key = "101-111-121"
         self.append_state(state_key, "reserve", "main")
+        self.processor.admin_telegram_ids.append(1234)
 
         checked = self.processor.check_filter(
             callback.message, "reserve", "main")

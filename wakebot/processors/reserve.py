@@ -11,7 +11,7 @@ from wakebot.adapters.state import StateManager
 from wakebot.processors.common import StatedProcessor
 from ..entities.user import User
 from ..entities.reserve import Reserve, ReserveSetType
-from ..adapters.data import ReserveDataAdapter
+from ..adapters.data import ReserveDataAdapter, UserDataAdapter
 
 
 class ReserveProcessor(StatedProcessor):
@@ -26,6 +26,8 @@ class ReserveProcessor(StatedProcessor):
             A locale strings class
         data_adapter:
             A reservation storage data adapter
+        user_data_adapter:
+            An user storage data adapter
         book_handlers:
             A dictionary of book menu handlers.
             A key matches InlineKeyboardButton.data value of book menu.
@@ -40,6 +42,7 @@ class ReserveProcessor(StatedProcessor):
                  state_manager: StateManager,
                  strings: any,
                  data_adapter: Union[ReserveDataAdapter, None] = None,
+                 user_data_adapter: Union[UserDataAdapter, None] = None,
                  state_type: Union[str, int, None] = "reserve"):
         """Initialize a class instance
 
@@ -50,19 +53,26 @@ class ReserveProcessor(StatedProcessor):
                 A state manager class instance
             strings:
                 A locale strings class.
+            data_adapter:
+                Optional. A reservation storage data adapter
+            user_data_adapter:
+                Optional. An user storage data adapter
             state_type:
                 Optional. A default state type.
                 Default value: "reserve"
-            parse_mode:
-                Optional. A parse mode of telegram messages (ParseMode).
-                Default value: aiogram.types.ParseMode.MARKDOWN
         """
         super().__init__(dispatcher, state_manager, state_type,
                          strings.parse_mode)
         self.strings = strings
         self.data_adapter = data_adapter
+        self.user_data_adapter = user_data_adapter
         self.max_count = 1
 
+        self.admin_telegram_ids = []
+        if user_data_adapter:
+            self.admin_telegram_ids = [user.telegram_id
+                                       for user
+                                       in user_data_adapter.get_admins()]
         self.reserve_set_types = {}
         self.reserve_set_types["set"] = ReserveSetType("set", 5)
         self.reserve_set_types["hour"] = ReserveSetType("hour", 60)
@@ -149,7 +159,8 @@ class ReserveProcessor(StatedProcessor):
             text, reply_markup, state, answer = self.create_book_message()
 
         elif callback_query.data == "list":
-            text, reply_markup, state, answer = self.create_list_message()
+            text, reply_markup, state, answer = self.create_list_message(
+                callback_query.from_user.id in self.admin_telegram_ids)
 
         await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
@@ -342,7 +353,7 @@ class ReserveProcessor(StatedProcessor):
         elif callback_query.data.startswith("cancel-"):
             reserve_id = int(callback_query.data[7:])
             self.data_adapter.remove_data_by_keys(reserve_id)
-            text, reply_markup, state, answer = self.create_list_message()
+            text, reply_markup, state, answer = self.create_list_message(True)
             answer = self.strings.reserve.cancel_button_callback
 
         elif callback_query.data.startswith("notify-"):
@@ -351,11 +362,11 @@ class ReserveProcessor(StatedProcessor):
 
             notify_text = self.strings.reserve.notify_message
             notify_text += f"\n\n{self.create_book_text(reserve)}"
-            await self.dispatcher.bot.send_message(reserve.user.telegram_id,
-                                                   notify_text,
-                                                   parse_mode=self.parse_mode)
+            await callback_query.bot.send_message(reserve.user.telegram_id,
+                                                  notify_text,
+                                                  parse_mode=self.parse_mode)
 
-            text, reply_markup, state, answer = self.create_list_message()
+            text, reply_markup, state, answer = self.create_list_message(True)
             answer = self.strings.reserve.notify_button_callback
 
         await callback_query.message.edit_text(text,
@@ -500,8 +511,11 @@ class ReserveProcessor(StatedProcessor):
 
         return (text, reply_markup, state, answer)
 
-    def create_list_message(self):
+    def create_list_message(self, admin_menu: bool = False):
         """Prepare a list menu message
+        Args:
+            admin_menu:
+                A boolean indicates to show admin menu
 
         Returns:
             text:
@@ -518,7 +532,7 @@ class ReserveProcessor(StatedProcessor):
             reserve_list = list(self.data_adapter.get_active_reserves())
 
         text = self.create_list_text(reserve_list)
-        reply_markup = self.create_list_keyboard(reserve_list)
+        reply_markup = self.create_list_keyboard(reserve_list, admin_menu)
         state = "list"
         answer = self.strings.reserve.list_button_callback
 
@@ -761,7 +775,7 @@ class ReserveProcessor(StatedProcessor):
             i += 1
             result += (f"  {i}. {self.create_reserve_text(reserve)}\n")
 
-        return f"{result}\n{self.strings.reserve.list_footer}"
+        return result
 
     def create_phone_text(self) -> str:
         """Create a phone message text
@@ -798,8 +812,8 @@ class ReserveProcessor(StatedProcessor):
 
         return result
 
-    def create_list_keyboard(
-            self, reserve_list: list = None) -> InlineKeyboardMarkup:
+    def create_list_keyboard(self, reserve_list: list = None,
+                             admin_menu: bool = False) -> InlineKeyboardMarkup:
         """Create list menu InlineKeyboardMarkup
         Args:
             reserve_list:
@@ -810,13 +824,14 @@ class ReserveProcessor(StatedProcessor):
         """
 
         result = InlineKeyboardMarkup(row_width=5)
-        count = len(reserve_list) if reserve_list else 0
-        buttons = []
-        for i in range(count):
-            buttons.append(InlineKeyboardButton(
-                str(i + 1), callback_data=str(reserve_list[i].id)))
+        if admin_menu:
+            count = len(reserve_list) if reserve_list else 0
+            buttons = []
+            for i in range(count):
+                buttons.append(InlineKeyboardButton(
+                    str(i + 1), callback_data=str(reserve_list[i].id)))
 
-        result.add(*buttons)
+            result.add(*buttons)
 
         button = InlineKeyboardButton(self.strings.back_button,
                                       callback_data='back')

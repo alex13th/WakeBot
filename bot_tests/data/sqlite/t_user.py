@@ -126,3 +126,15 @@ class SqliteUserAdapterTestCase(BaseTestCase):
         passed, alert = self.assert_params(
             self.adapter.get_data_by_keys(users[2].user_id), None)
         assert passed, alert
+
+    async def test_get_admins(self):
+        users = []
+        for i in range(4):
+            self.user.firstname = str(i)*5
+            self.user.telegram_id = int(str(i)*5)
+            self.user.is_admin = (i % 2 == 0)
+            users.append(self.adapter.append_data(self.user))
+
+        for user in self.adapter.get_admins():
+            passed, alert = self.assert_params(user.is_admin, True)
+            assert passed, alert

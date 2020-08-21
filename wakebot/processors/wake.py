@@ -5,9 +5,8 @@ from aiogram.dispatcher import Dispatcher
 
 from ..adapters.state import StateManager
 from .reserve import ReserveProcessor
-from ..entities.user import User
-from ..entities.wake import Wake, ReserveSetType
-from ..adapters.data import ReserveDataAdapter
+from ..entities import User, Wake, ReserveSetType
+from ..adapters.data import ReserveDataAdapter, UserDataAdapter
 
 
 class WakeProcessor(ReserveProcessor):
@@ -22,6 +21,8 @@ class WakeProcessor(ReserveProcessor):
             A locale strings class
         data_adapter:
             A reservation storage data adapter
+        user_data_adapter:
+            An user storage data adapter
         book_handlers:
             A dictionary of book menu handlers.
             A key matches InlineKeyboardButton.data value of book menu.
@@ -33,6 +34,7 @@ class WakeProcessor(ReserveProcessor):
                  state_manager: StateManager,
                  strings: any,
                  data_adapter: Union[ReserveDataAdapter, None] = None,
+                 user_data_adapter: Union[UserDataAdapter, None] = None,
                  state_type: Union[str, int, None] = "wake"):
         """Initialize a class instance
 
@@ -44,7 +46,9 @@ class WakeProcessor(ReserveProcessor):
             strings:
                 A locale strings class.
             data_adapter:
-                Optonal. A wake reservation storage data adapter
+                Optional. A reservation storage data adapter
+            user_data_adapter:
+                Optional. An user storage data adapter
             state_type:
                 Optional, A default state type.
                 Default value: "wake"
@@ -52,7 +56,9 @@ class WakeProcessor(ReserveProcessor):
                 Optional. A parse mode of telegram messages (ParseMode).
                 Default value: aiogram.types.ParseMode.MARKDOWN
         """
-        super().__init__(dispatcher, state_manager, strings, data_adapter,
+        super().__init__(dispatcher, state_manager, strings,
+                         data_adapter=data_adapter,
+                         user_data_adapter=user_data_adapter,
                          state_type=state_type)
 
         self.reserve_set_types["set"] = ReserveSetType("set", 10)
@@ -81,8 +87,21 @@ class WakeProcessor(ReserveProcessor):
         reserve = self.create_reserve(answer)
 
         from_user = message.from_user
-        user = User(from_user.first_name, from_user.last_name,
-                    displayname=from_user.full_name, telegram_id=from_user.id)
+
+        user = None
+        if self.user_data_adapter:
+            user = self.user_data_adapter.get_user_by_telegram_id(from_user.id)
+            self.admin_telegram_ids = [user.telegram_id
+                                       for user
+                                       in self.user_data_adapter.get_admins()]
+
+        if not user:
+            user = User(from_user.first_name, from_user.last_name,
+                        displayname=from_user.full_name,
+                        telegram_id=from_user.id)
+            if self.user_data_adapter:
+                user = self.user_data_adapter.append_data(user)
+
         reserve.user = user
 
         state_manager.set_state(state_type="wake", state="main", data=reserve)

@@ -13,6 +13,7 @@ from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.state import StateManager
 from wakebot.adapters.postgres import PostgressWakeAdapter
 from wakebot.adapters.postgres import PostgressSupboardAdapter
+from wakebot.adapters.postgres import PostgresUserAdapter
 # from config import TOKEN
 
 TOKEN = os.environ["TOKEN"]
@@ -27,12 +28,21 @@ state_manager = StateManager(MemoryDataAdapter())
 
 default_processor = DefaultProcessor(dp, RuGeneral)
 connection = psycopg2.connect(DATABASE_URL)
+user_adapter = PostgresUserAdapter(connection, "wp38_users")
 
 wake_adapter = PostgressWakeAdapter(connection, "wp38_wake")
-wake_processor = WakeProcessor(dp, state_manager, RuGeneral, wake_adapter)
+wake_processor = WakeProcessor(dp,
+                               state_manager=state_manager,
+                               strings=RuGeneral,
+                               data_adapter=wake_adapter,
+                               user_data_adapter=user_adapter)
 
 sup_adapter = PostgressSupboardAdapter(connection, "wp38_supboard")
-sup_processor = SupboardProcessor(dp, state_manager, RuGeneral, sup_adapter)
+sup_processor = SupboardProcessor(dp,
+                                  state_manager=state_manager,
+                                  strings=RuGeneral,
+                                  data_adapter=sup_adapter,
+                                  user_data_adapter=user_adapter)
 sup_processor.max_count = 6
 
 if __name__ == "__main__":
