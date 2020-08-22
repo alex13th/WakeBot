@@ -36,10 +36,10 @@ class DefaultProcessor:
 
     async def cmd_start(self, message: Message):
         """Proceed /start"""
-        await message.answer(self.strings.default.start_message,
+        await message.answer(self.strings.start_message,
                              self.parse_mode)
 
     async def cmd_help(self, message: Message):
         """Proceed /help"""
-        await message.answer(self.strings.default.help_message,
+        await message.answer(self.strings.help_message,
                              self.parse_mode)

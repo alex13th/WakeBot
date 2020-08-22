@@ -19,37 +19,37 @@ from bot_tests.data.postgres import PostgresUserAdapterTestCase
 
 test_count = fail_count = 0
 
-# tests, fails = StateManagerTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = StateManagerTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = StateProviderTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = StateProviderTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = MemoryDataAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = MemoryDataAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = UserTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = UserTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = ReserveTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = ReserveTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = WakeTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = WakeTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = SupboardTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = SupboardTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = DefaultProcessorTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = DefaultProcessorTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
 tests, fails = ReserveProcessorTestCase().run_tests_async()
 test_count += tests
@@ -63,28 +63,28 @@ tests, fails = SupboardProcessorTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
-# tests, fails = SqliteSupboardAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = SqliteSupboardAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = SqliteWakeAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = SqliteUserAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = SqliteUserAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = PostgresSupboardAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = PostgresSupboardAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = PostgresWakeAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = PostgresWakeAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
-# tests, fails = PostgresUserAdapterTestCase().run_tests_async()
-# test_count += tests
-# fail_count += fails
+tests, fails = PostgresUserAdapterTestCase().run_tests_async()
+test_count += tests
+fail_count += fails
 
 print(f"\nRan {test_count} test (failure = {fail_count}) ")

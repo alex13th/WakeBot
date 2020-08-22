@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.sqlite import SqliteSupboardAdapter, SqliteUserAdapter
 from wakebot.adapters.state import StateManager
-from wakebot.processors import RuGeneral, SupboardProcessor
+from wakebot.processors import RuSupboard, SupboardProcessor
 from wakebot.entities import Supboard
 
 
@@ -18,7 +18,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
 
     def setUp(self):
         super().setUp()
-        self.strings = RuGeneral
+        self.strings = RuSupboard
 
         self.dp = Dispatcher()
         self.data_adapter = MemoryDataAdapter()
@@ -67,7 +67,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         """Create book menu InlineKeyboardMarkup"""
         result = InlineKeyboardMarkup(row_width=6)
 
-        button = InlineKeyboardButton(self.strings.reserve.count_button,
+        button = InlineKeyboardButton(self.strings.count_button,
                                       callback_data='count')
         result.add(button)
 
@@ -80,9 +80,9 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         result.add(button)
 
         # Adding Set- and Hour- buttons in one row
-        set_button = InlineKeyboardButton(self.strings.reserve.set_button,
+        set_button = InlineKeyboardButton(self.strings.set_button,
                                           callback_data='set')
-        hour_button = InlineKeyboardButton(self.strings.reserve.hour_button,
+        hour_button = InlineKeyboardButton(self.strings.hour_button,
                                            callback_data='set_hour')
         result.row(set_button, hour_button)
 
@@ -94,7 +94,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
             reserve: Supboard = self.state_manager.data
             if reserve.is_complete:
                 button = InlineKeyboardButton(
-                    self.strings.reserve.apply_button,
+                    self.strings.apply_button,
                     callback_data='apply')
                 result.add(button)
 
@@ -106,13 +106,13 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         return result
 
     def create_main_text(self):
-        return self.strings.supboard.hello_message
+        return self.strings.hello_message
 
     def create_list_text(self):
         if not self.reserves:
-            return self.strings.reserve.list_empty
+            return self.strings.list_empty
 
-        result = f"{self.strings.reserve.list_header}\n"
+        result = f"{self.strings.list_header}\n"
         cur_date = None
         for i in range(2, len(self.reserves)):
             reserve = self.reserves[i]
@@ -130,8 +130,8 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
 
     def create_book_text(self, show_contact=False):
         reserve = self.state_manager.data
-        result = (f"{self.strings.reserve.type_label} "
-                  f"{RuGeneral.supboard.supboard_text}\n")
+        result = (f"{self.strings.service_label} "
+                  f"{self.strings.service_type_text}\n")
 
         if reserve.user:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
@@ -139,23 +139,23 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.reserve.date_label} "
+        result += (f"{self.strings.date_label} "
                    f"{reserve.start_date.strftime(self.strings.date_format)}"
                    "\n")
 
         if reserve.start_time:
             start_time = reserve.start_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.start_label} "
+            result += (f"{self.strings.start_label} "
                        f"{start_time}\n")
             end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.end_label} "
+            result += (f"{self.strings.end_label} "
                        f"{end_time}\n")
 
-        result += (f"{self.strings.reserve.set_type_label} "
-                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+        result += (f"{self.strings.set_type_label} "
+                   f"{self.strings.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
-        result += f"{self.strings.reserve.count_label} {reserve.count}"
+        result += f"{self.strings.count_label} {reserve.count}"
 
         return result
 
@@ -168,8 +168,10 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
         await self.processor.cmd_sup(message)
         state_data = self.data_adapter.get_data_by_keys('101-111-1001')
 
-        passed, message = self.assert_params(self.message.text,
-                                             RuGeneral.supboard.hello_message)
+        passed, message = self.assert_params(
+            self.message.text,
+            self.strings.hello_message
+        )
         assert passed, message
 
         passed, message = self.assert_params(self.message.reply_markup,

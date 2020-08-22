@@ -77,7 +77,7 @@ class WakeProcessor(ReserveProcessor):
         text, reply_markup, state, _ = self.create_main_message()
 
         answer = await message.answer(
-            self.strings.wake.hello_message,
+            self.strings.hello_message,
             reply_markup=self.create_main_keyboard(),
             parse_mode=self.parse_mode)
 
@@ -150,7 +150,7 @@ class WakeProcessor(ReserveProcessor):
         text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(start=0, count=3)
         state = "board"
-        answer = self.strings.wake.board_button_callback
+        answer = self.strings.board_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -198,7 +198,7 @@ class WakeProcessor(ReserveProcessor):
         text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(start=0, count=3)
         state = "hydro"
-        answer = self.strings.wake.hydro_button_callback
+        answer = self.strings.hydro_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -209,7 +209,7 @@ class WakeProcessor(ReserveProcessor):
             A message text.
         """
 
-        return self.strings.wake.hello_message
+        return self.strings.hello_message
 
     def create_book_text(self,
                          reserve: Wake,
@@ -228,8 +228,8 @@ class WakeProcessor(ReserveProcessor):
             A message text.
         """
 
-        result = (f"{self.strings.reserve.type_label} "
-                  f"{self.strings.wake.wake_text}\n")
+        result = (f"{self.strings.service_label} "
+                  f"{self.strings.service_type_text}\n")
 
         if reserve.user:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
@@ -237,27 +237,27 @@ class WakeProcessor(ReserveProcessor):
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.reserve.date_label} "
+        result += (f"{self.strings.date_label} "
                    f"{reserve.start_date.strftime(self.strings.date_format)}"
                    "\n")
 
         if reserve.start_time:
             start_time = reserve.start_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.start_label} "
+            result += (f"{self.strings.start_label} "
                        f"{start_time}\n")
             end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.end_label} "
+            result += (f"{self.strings.end_label} "
                        f"{end_time}\n")
 
-        result += (f"{self.strings.reserve.set_type_label} "
-                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+        result += (f"{self.strings.set_type_label} "
+                   f"{self.strings.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
         if reserve.board or reserve.hydro:
-            result += self.strings.wake.options_label
-            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+            result += self.strings.options_label
+            result += (f" {self.strings.icon_board}x{reserve.board}"
                        if reserve.board else "")
-            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+            result += (f" {self.strings.icon_hydro}x{reserve.hydro}"
                        if reserve.hydro else "")
 
         return result
@@ -267,9 +267,9 @@ class WakeProcessor(ReserveProcessor):
         start_time = reserve.start_time.strftime(self.strings.time_format)
         end_time = reserve.end_time.strftime(self.strings.time_format)
         result += f"{start_time} - {end_time}"
-        result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+        result += (f" {self.strings.icon_board}x{reserve.board}"
                    if reserve.board else "")
-        result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+        result += (f" {self.strings.icon_hydro}x{reserve.hydro}"
                    if reserve.hydro else "")
 
         return result
@@ -293,16 +293,16 @@ class WakeProcessor(ReserveProcessor):
         result.add(button)
 
         # Adding Set- and Hour- buttons in one row
-        set_button = InlineKeyboardButton(self.strings.wake.set_button,
+        set_button = InlineKeyboardButton(self.strings.set_button,
                                           callback_data='set')
-        hour_button = InlineKeyboardButton(self.strings.wake.hour_button,
+        hour_button = InlineKeyboardButton(self.strings.hour_button,
                                            callback_data='set_hour')
         result.row(set_button, hour_button)
 
         # Adding Board- and Hydro- buttons in one row
-        set_button = InlineKeyboardButton(self.strings.wake.board_button,
+        set_button = InlineKeyboardButton(self.strings.board_button,
                                           callback_data='board')
-        hour_button = InlineKeyboardButton(self.strings.wake.hydro_button,
+        hour_button = InlineKeyboardButton(self.strings.hydro_button,
                                            callback_data='hydro')
         result.row(set_button, hour_button)
 
@@ -313,7 +313,7 @@ class WakeProcessor(ReserveProcessor):
         if self.state_manager.data:
             if ready:
                 button = InlineKeyboardButton(
-                    self.strings.reserve.apply_button,
+                    self.strings.apply_button,
                     callback_data='apply')
                 result.add(button)
 

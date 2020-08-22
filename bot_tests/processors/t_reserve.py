@@ -5,7 +5,7 @@ from datetime import date, time, timedelta
 
 from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.state import StateManager
-from wakebot.processors import RuGeneral, ReserveProcessor
+from wakebot.processors import RuReserve, ReserveProcessor
 from wakebot.entities import Reserve
 
 from aiogram.types import Message, CallbackQuery, Chat, User
@@ -17,7 +17,7 @@ class ReserveProcessorTestCase(BaseTestCase):
 
     def setUp(self):
         self.reserves = []
-        self.strings = RuGeneral
+        self.strings = RuReserve
 
         self.chat = Chat()
         self.chat.id = 101
@@ -85,20 +85,20 @@ class ReserveProcessorTestCase(BaseTestCase):
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.reserve.date_label} "
+        result += (f"{self.strings.date_label} "
                    f"{reserve.start_date.strftime(self.strings.date_format)}"
                    "\n")
 
         if reserve.start_time:
             start_time = reserve.start_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.start_label} "
+            result += (f"{self.strings.start_label} "
                        f"{start_time}\n")
             end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.end_label} "
+            result += (f"{self.strings.end_label} "
                        f"{end_time}\n")
 
-        result += (f"{self.strings.reserve.set_type_label} "
-                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+        result += (f"{self.strings.set_type_label} "
+                   f"{self.strings.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
         result += (f"{self.strings.count_label} "
@@ -108,9 +108,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
     def create_list_text(self):
         if not self.reserves:
-            return self.strings.reserve.list_empty
+            return self.strings.list_empty
 
-        result = f"{self.strings.reserve.list_header}\n"
+        result = f"{self.strings.list_header}\n"
         cur_date = None
         for i in range(2, 8):
             reserve = self.reserves[i]
@@ -136,10 +136,10 @@ class ReserveProcessorTestCase(BaseTestCase):
         """Create Main menu InlineKeyboardMarkup"""
         result = InlineKeyboardMarkup(row_width=1)
 
-        button = InlineKeyboardButton(self.strings.reserve.start_book_button,
+        button = InlineKeyboardButton(self.strings.start_book_button,
                                       callback_data='book')
         result.add(button)
-        button = InlineKeyboardButton(self.strings.reserve.list_button,
+        button = InlineKeyboardButton(self.strings.list_button,
                                       callback_data='list')
         result.add(button)
 
@@ -149,7 +149,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         """Create book menu InlineKeyboardMarkup"""
         result = InlineKeyboardMarkup(row_width=1)
 
-        button = InlineKeyboardButton(self.strings.reserve.count_button,
+        button = InlineKeyboardButton(self.strings.count_button,
                                       callback_data='count')
         result.add(button)
 
@@ -169,7 +169,7 @@ class ReserveProcessorTestCase(BaseTestCase):
             reserve: Reserve = self.state_manager.data
             if reserve.is_complete:
                 button = InlineKeyboardButton(
-                    self.strings.reserve.apply_button,
+                    self.strings.apply_button,
                     callback_data='apply')
                 result.add(button)
 
@@ -270,11 +270,11 @@ class ReserveProcessorTestCase(BaseTestCase):
         result = InlineKeyboardMarkup(row_width=1)
         buttons = []
         buttons.append(InlineKeyboardButton(
-            self.strings.reserve.cancel_button,
+            self.strings.cancel_button,
             callback_data=f"cancel-{reserve.id}"))
 
         buttons.append(InlineKeyboardButton(
-            self.strings.reserve.notify_button,
+            self.strings.notify_button,
             callback_data=f"notify-{reserve.id}"))
 
         buttons.append(InlineKeyboardButton(

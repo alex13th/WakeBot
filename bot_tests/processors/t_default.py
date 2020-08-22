@@ -2,7 +2,7 @@ from ..mocks.aiogram import Dispatcher
 from ..base_test_case import BaseTestCase
 
 from aiogram.types import Message
-from wakebot.processors import RuGeneral, DefaultProcessor
+from wakebot.processors import RuDefault, DefaultProcessor
 
 
 class DefaultProcessorTestCase(BaseTestCase):
@@ -10,8 +10,8 @@ class DefaultProcessorTestCase(BaseTestCase):
 
     def setUp(self):
         dp = Dispatcher()
-        self.processor = DefaultProcessor(dp, RuGeneral)
-        self.strings = RuGeneral.default
+        self.processor = DefaultProcessor(dp, RuDefault)
+        self.strings = RuDefault
 
     async def answer_mock(self, text, parse_mode=None):
         self.result_text = text

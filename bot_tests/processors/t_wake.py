@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from wakebot.adapters.data import MemoryDataAdapter
 from wakebot.adapters.sqlite import SqliteWakeAdapter, SqliteUserAdapter
 from wakebot.adapters.state import StateManager
-from wakebot.processors import RuGeneral, WakeProcessor
+from wakebot.processors import RuWake, WakeProcessor
 from wakebot.entities import Wake
 
 
@@ -18,7 +18,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
     def setUp(self):
         super().setUp()
-        self.strings = RuGeneral
+        self.strings = RuWake
 
         self.dp = Dispatcher()
         self.data_adapter = MemoryDataAdapter()
@@ -74,16 +74,16 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         result.add(button)
 
         # Adding Set- and Hour- buttons in one row
-        set_button = InlineKeyboardButton(self.strings.wake.set_button,
+        set_button = InlineKeyboardButton(self.strings.set_button,
                                           callback_data='set')
-        hour_button = InlineKeyboardButton(self.strings.wake.hour_button,
+        hour_button = InlineKeyboardButton(self.strings.hour_button,
                                            callback_data='set_hour')
         result.row(set_button, hour_button)
 
         # Adding Board- and Hydro- buttons in one row
-        set_button = InlineKeyboardButton(self.strings.wake.board_button,
+        set_button = InlineKeyboardButton(self.strings.board_button,
                                           callback_data='board')
-        hour_button = InlineKeyboardButton(self.strings.wake.hydro_button,
+        hour_button = InlineKeyboardButton(self.strings.hydro_button,
                                            callback_data='hydro')
         result.row(set_button, hour_button)
 
@@ -95,7 +95,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
             reserve: Wake = self.state_manager.data
             if reserve.is_complete:
                 button = InlineKeyboardButton(
-                    self.strings.reserve.apply_button,
+                    self.strings.apply_button,
                     callback_data='apply')
                 result.add(button)
 
@@ -107,13 +107,13 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         return result
 
     def create_main_text(self):
-        return self.strings.wake.hello_message
+        return self.strings.hello_message
 
     def create_list_text(self):
         if not self.reserves:
-            return self.strings.reserve.list_empty
+            return self.strings.list_empty
 
-        result = f"{self.strings.reserve.list_header}\n"
+        result = f"{self.strings.list_header}\n"
         cur_date = None
         for i in range(2, len(self.reserves)):
             reserve = self.reserves[i]
@@ -124,9 +124,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
             start_time = reserve.start_time.strftime(self.strings.time_format)
             end_time = reserve.end_time.strftime(self.strings.time_format)
             result += f"  {i - 1}. {start_time} - {end_time}"
-            result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+            result += (f" {self.strings.icon_board}x{reserve.board}"
                        if reserve.board else "")
-            result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+            result += (f" {self.strings.icon_hydro}x{reserve.hydro}"
                        if reserve.hydro else "")
             result += "\n"
 
@@ -134,8 +134,8 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
     def create_book_text(self, show_contact=False):
         reserve = self.state_manager.data
-        result = (f"{self.strings.reserve.type_label} "
-                  f"{RuGeneral.wake.wake_text}\n")
+        result = (f"{self.strings.service_label} "
+                  f"{self.strings.service_type_text}\n")
 
         if reserve.user:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
@@ -143,28 +143,28 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.reserve.date_label} "
+        result += (f"{self.strings.date_label} "
                    f"{reserve.start_date.strftime(self.strings.date_format)}"
                    "\n")
 
         if reserve.start_time:
             start_time = reserve.start_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.start_label} "
+            result += (f"{self.strings.start_label} "
                        f"{start_time}\n")
             end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.end_label} "
+            result += (f"{self.strings.end_label} "
                        f"{end_time}\n")
 
-        result += (f"{self.strings.reserve.set_type_label} "
-                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+        result += (f"{self.strings.set_type_label} "
+                   f"{self.strings.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
         if reserve.board or reserve.hydro:
-            result += self.strings.wake.options_label
+            result += self.strings.options_label
 
-        result += (f" {self.strings.wake.icon_board}x{reserve.board}"
+        result += (f" {self.strings.icon_board}x{reserve.board}"
                    if reserve.board else "")
-        result += (f" {self.strings.wake.icon_hydro}x{reserve.hydro}"
+        result += (f" {self.strings.icon_hydro}x{reserve.hydro}"
                    if reserve.hydro else "")
 
         return result
@@ -179,7 +179,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         state_data = self.data_adapter.get_data_by_keys('101-111-1001')
 
         passed, message = self.assert_params(self.message.text,
-                                             RuGeneral.wake.hello_message)
+                                             self.strings.hello_message)
         assert passed, message
 
         passed, message = self.assert_params(self.message.reply_markup,

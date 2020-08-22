@@ -131,7 +131,7 @@ class ReserveProcessor(StatedProcessor):
         concurrent_count = self.data_adapter.get_concurrent_count(reserve)
         if concurrent_count + reserve.count > self.max_count:
             text, reply_markup, state, _ = self.create_book_message()
-            answer = self.strings.reserve.apply_error_callback
+            answer = self.strings.apply_error_callback
             await self.callback_query_action(
                 callback_query, text, reply_markup, state, answer)
             return
@@ -141,7 +141,7 @@ class ReserveProcessor(StatedProcessor):
         reserve = self.state_manager.data
         text = self.create_book_text(reserve, check=False)
         reply_markup = None
-        answer = self.strings.reserve.apply_button_callback
+        answer = self.strings.apply_button_callback
         self.state_manager.finish()
 
         await callback_query.message.edit_text(text,
@@ -354,20 +354,20 @@ class ReserveProcessor(StatedProcessor):
             reserve_id = int(callback_query.data[7:])
             self.data_adapter.remove_data_by_keys(reserve_id)
             text, reply_markup, state, answer = self.create_list_message(True)
-            answer = self.strings.reserve.cancel_button_callback
+            answer = self.strings.cancel_button_callback
 
         elif callback_query.data.startswith("notify-"):
             reserve_id = int(callback_query.data[7:])
             reserve = self.data_adapter.get_data_by_keys(reserve_id)
 
-            notify_text = self.strings.reserve.notify_message
+            notify_text = self.strings.notify_message
             notify_text += f"\n\n{self.create_book_text(reserve)}"
             await callback_query.bot.send_message(reserve.user.telegram_id,
                                                   notify_text,
                                                   parse_mode=self.parse_mode)
 
             text, reply_markup, state, answer = self.create_list_message(True)
-            answer = self.strings.reserve.notify_button_callback
+            answer = self.strings.notify_button_callback
 
         await callback_query.message.edit_text(text,
                                                reply_markup=reply_markup,
@@ -453,7 +453,7 @@ class ReserveProcessor(StatedProcessor):
 
     def check_concurrents(self, reserve: Reserve):
         concurs = self.data_adapter.get_concurrent_reserves(reserve)
-        result_text = f"\n{self.strings.reserve.restrict_list_header}\n"
+        result_text = f"\n{self.strings.restrict_list_header}\n"
         i = 0
         concur_count = reserve.count
         for concur in concurs:
@@ -479,7 +479,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_main_text()
         reply_markup = self.create_main_keyboard()
         state = "main"
-        answer = self.strings.reserve.main_callback
+        answer = self.strings.main_callback
 
         return (text, reply_markup, state, answer)
 
@@ -507,7 +507,7 @@ class ReserveProcessor(StatedProcessor):
         ready = reserve.is_complete and not conflicted
         reply_markup = self.create_book_keyboard(ready)
         state = "book"
-        answer = self.strings.reserve.start_book_button_callback
+        answer = self.strings.start_book_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -534,7 +534,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_list_text(reserve_list)
         reply_markup = self.create_list_keyboard(reserve_list, admin_menu)
         state = "list"
-        answer = self.strings.reserve.list_button_callback
+        answer = self.strings.list_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -543,7 +543,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_details_keyboard(reserve)
         state = "details"
-        answer = self.strings.reserve.cancel_button_callback
+        answer = self.strings.cancel_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -627,7 +627,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(self.max_count)
         state = "count"
-        answer = self.strings.reserve.count_button_callback
+        answer = self.strings.count_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -648,7 +648,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(6)
         state = "set"
-        answer = self.strings.reserve.set_button_callback
+        answer = self.strings.set_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -669,7 +669,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_book_text(reserve, show_contact=True)
         reply_markup = self.create_count_keyboard(6)
         state = "set_hour"
-        answer = self.strings.reserve.set_button_callback
+        answer = self.strings.set_button_callback
 
         return (text, reply_markup, state, answer)
 
@@ -729,20 +729,20 @@ class ReserveProcessor(StatedProcessor):
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.reserve.date_label} "
+        result += (f"{self.strings.date_label} "
                    f"{reserve.start_date.strftime(self.strings.date_format)}"
                    "\n")
 
         if reserve.start_time:
             start_time = reserve.start_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.start_label} "
+            result += (f"{self.strings.start_label} "
                        f"{start_time}\n")
             end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.end_label} "
+            result += (f"{self.strings.end_label} "
                        f"{end_time}\n")
 
-        result += (f"{self.strings.reserve.set_type_label} "
-                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+        result += (f"{self.strings.set_type_label} "
+                   f"{self.strings.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
         result += (f"{self.strings.count_label} "
@@ -761,9 +761,9 @@ class ReserveProcessor(StatedProcessor):
         """
 
         if not reserve_list:
-            return self.strings.reserve.list_empty
+            return self.strings.list_empty
 
-        result = f"{self.strings.reserve.list_header}\n"
+        result = f"{self.strings.list_header}\n"
 
         cur_date = None
         i = 0
@@ -803,10 +803,10 @@ class ReserveProcessor(StatedProcessor):
         """
         result = InlineKeyboardMarkup(row_width=1)
 
-        button = InlineKeyboardButton(self.strings.reserve.start_book_button,
+        button = InlineKeyboardButton(self.strings.start_book_button,
                                       callback_data='book')
         result.add(button)
-        button = InlineKeyboardButton(self.strings.reserve.list_button,
+        button = InlineKeyboardButton(self.strings.list_button,
                                       callback_data='list')
         result.add(button)
 
@@ -852,11 +852,11 @@ class ReserveProcessor(StatedProcessor):
         result = InlineKeyboardMarkup(row_width=1)
         buttons = []
         buttons.append(InlineKeyboardButton(
-            self.strings.reserve.cancel_button,
+            self.strings.cancel_button,
             callback_data=f"cancel-{reserve.id}"))
 
         buttons.append(InlineKeyboardButton(
-            self.strings.reserve.notify_button,
+            self.strings.notify_button,
             callback_data=f"notify-{reserve.id}"))
 
         buttons.append(InlineKeyboardButton(
@@ -877,7 +877,7 @@ class ReserveProcessor(StatedProcessor):
         """
         result = InlineKeyboardMarkup(row_width=1)
 
-        button = InlineKeyboardButton(self.strings.reserve.count_button,
+        button = InlineKeyboardButton(self.strings.count_button,
                                       callback_data='count')
         result.add(button)
 
@@ -896,7 +896,7 @@ class ReserveProcessor(StatedProcessor):
         if self.state_manager.data:
             if ready:
                 button = InlineKeyboardButton(
-                    self.strings.reserve.apply_button,
+                    self.strings.apply_button,
                     callback_data='apply')
                 result.add(button)
 

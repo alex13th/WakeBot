@@ -73,7 +73,7 @@ class SupboardProcessor(ReserveProcessor):
         text, reply_markup, state, _ = self.create_main_message()
 
         answer = await message.answer(
-            self.strings.supboard.hello_message,
+            self.strings.hello_message,
             reply_markup=self.create_main_keyboard(),
             parse_mode=self.parse_mode)
 
@@ -108,7 +108,7 @@ class SupboardProcessor(ReserveProcessor):
             A message text.
         """
 
-        return self.strings.supboard.hello_message
+        return self.strings.hello_message
 
     def create_book_text(self,
                          reserve: Supboard,
@@ -127,8 +127,8 @@ class SupboardProcessor(ReserveProcessor):
             A message text.
         """
 
-        result = (f"{self.strings.reserve.type_label} "
-                  f"{self.strings.supboard.supboard_text}\n")
+        result = (f"{self.strings.service_label} "
+                  f"{self.strings.service_type_text}\n")
 
         if reserve.user and show_contact:
             result += f"{self.strings.name_label} {reserve.user.displayname}\n"
@@ -136,23 +136,23 @@ class SupboardProcessor(ReserveProcessor):
                 result += (f"{self.strings.phone_label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.reserve.date_label} "
+        result += (f"{self.strings.date_label} "
                    f"{reserve.start_date.strftime(self.strings.date_format)}"
                    "\n")
 
         if reserve.start_time:
             start_time = reserve.start_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.start_label} "
+            result += (f"{self.strings.start_label} "
                        f"{start_time}\n")
             end_time = reserve.end_time.strftime(self.strings.time_format)
-            result += (f"{self.strings.reserve.end_label} "
+            result += (f"{self.strings.end_label} "
                        f"{end_time}\n")
 
-        result += (f"{self.strings.reserve.set_type_label} "
-                   f"{self.strings.reserve.set_types[reserve.set_type.set_id]}"
+        result += (f"{self.strings.set_type_label} "
+                   f"{self.strings.set_types[reserve.set_type.set_id]}"
                    f" ({reserve.set_count})\n")
 
-        result += (f"{self.strings.reserve.count_label}"
+        result += (f"{self.strings.count_label}"
                    f" {reserve.count}")
 
         return result
@@ -176,7 +176,7 @@ class SupboardProcessor(ReserveProcessor):
         """
         result = InlineKeyboardMarkup(row_width=6)
 
-        button = InlineKeyboardButton(self.strings.reserve.count_button,
+        button = InlineKeyboardButton(self.strings.count_button,
                                       callback_data='count')
         result.add(button)
 
@@ -189,9 +189,9 @@ class SupboardProcessor(ReserveProcessor):
         result.add(button)
 
         # Adding Set- and Hour- buttons in one row
-        set_button = InlineKeyboardButton(self.strings.wake.set_button,
+        set_button = InlineKeyboardButton(self.strings.set_button,
                                           callback_data='set')
-        hour_button = InlineKeyboardButton(self.strings.wake.hour_button,
+        hour_button = InlineKeyboardButton(self.strings.hour_button,
                                            callback_data='set_hour')
         result.row(set_button, hour_button)
 
@@ -202,7 +202,7 @@ class SupboardProcessor(ReserveProcessor):
         if self.state_manager.data:
             if ready:
                 button = InlineKeyboardButton(
-                    self.strings.reserve.apply_button,
+                    self.strings.apply_button,
                     callback_data='apply')
                 result.add(button)
 
