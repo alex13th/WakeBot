@@ -156,6 +156,12 @@ class ReserveProcessor(StatedProcessor):
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
         await callback_query.answer(answer)
+        for telegram_id in self.admin_telegram_ids:
+            if not telegram_id == callback_query.from_user.id:
+                await callback_query.bot.send_message(
+                    telegram_id, text,
+                    reply_markup=None,
+                    parse_mode=self.parse_mode)
 
     async def callback_main(self, callback_query: CallbackQuery):
         """Main menu CallbackQuery handler"""
@@ -508,7 +514,7 @@ class ReserveProcessor(StatedProcessor):
         text = self.create_book_text(reserve, show_contact=True)
 
         conflicted = False
-        if self.data_adapter and reserve.is_complete:
+        if self.data_adapter:
             conflicted, concurrent_text = self.check_concurrents(reserve)
             if conflicted:
                 text += concurrent_text
