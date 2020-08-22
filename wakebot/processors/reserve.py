@@ -1,3 +1,4 @@
+import re
 from typing import Union
 from datetime import date, time, timedelta
 
@@ -103,18 +104,25 @@ class ReserveProcessor(StatedProcessor):
     async def message_phone(self, message: Message):
         """Phone number reply message handler"""
 
+        reply_text = None
         reserve = self.state_manager.data
-        reserve.user.phone_number = message.text
-        self.state_manager.finish()
 
-        await message.answer(text=self.strings.phone_success_message,
-                             reply_markup=ReplyKeyboardRemove())
+        if re.match(self.strings.phone_regex, message.text):
+            reserve.user.phone_number = message.text
+            reply_text = self.strings.phone_success_message
+        else:
+            reply_text = self.strings.phone_error_message
+
+        self.state_manager.finish()
 
         text, reply_markup, state, answer = self.create_book_message()
         answer = await message.answer(text, reply_markup=reply_markup,
                                       parse_mode=self.parse_mode)
         await message.reply_to_message.delete()
         await message.delete()
+
+        await message.answer(text=reply_text,
+                             reply_markup=ReplyKeyboardRemove())
 
         self.update_state(answer, message_state=True)
 

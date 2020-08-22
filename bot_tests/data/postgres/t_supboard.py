@@ -17,7 +17,7 @@ class PostgresSupboardAdapterTestCase(BaseTestCase):
     def setUp(self):
         self.drop_table()
         self.adapter = PostgressSupboardAdapter(self.connection)
-        self.user = User("Firstname", telegram_id=586)
+        self.user = User("Firstname", telegram_id=586, phone_number="+7777")
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
         self.set_count = 3
@@ -125,7 +125,7 @@ class PostgresSupboardAdapterTestCase(BaseTestCase):
         self.supboards = []
         for i in range(8):
             start_time = time(10 + i)
-            user = User(f"Firstname{i}")
+            user = User(f"Firstname{i}", phone_number="+777")
             user.lastname = f"Lastname{i}"
             user.telegram_id = int(str(i)*8)
             start_date = date.today()
@@ -148,7 +148,7 @@ class PostgresSupboardAdapterTestCase(BaseTestCase):
 
         for i in range(8):
             start_time = time(10 + i)
-            user = User(f"Firstname{i}")
+            user = User(f"Firstname{i}", phone_number="+777")
             user.lastname = f"Lastname{i}"
             user.telegram_id = int(str(i)*8)
             start_date = date.today()

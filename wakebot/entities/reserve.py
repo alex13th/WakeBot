@@ -87,22 +87,21 @@ class Reserve:
 
     @property
     def is_complete(self) -> bool:
-        """Информация о клиенте"""
-        return self.__start_date and self.__start_time and self.minutes
+        return (self.__start_date
+                and self.__start_time
+                and self.minutes
+                and self.user and self.user.phone_number)
 
     @property
     def user(self) -> Optional[User]:
-        """Информация о клиенте"""
         return self.__user
 
     @user.setter
     def user(self, value: Optional[User]):
-        """Информация о клиенте"""
         self.__user = value
 
     @property
     def start(self) -> Optional[datetime]:
-        """Дата и время начала резервирования"""
         if not (self.__start_date and self.__start_time):
             return None
 
@@ -115,12 +114,10 @@ class Reserve:
 
     @property
     def start_date(self) -> Optional[date]:
-        """Дата время начала резервирования"""
         return self.__start_date
 
     @start_date.setter
     def start_date(self, value: Optional[date]):
-        """Дата время начала резервирования"""
         self.__start_date = value
 
     @property
@@ -137,7 +134,6 @@ class Reserve:
 
     @property
     def end(self) -> Optional[datetime]:
-        """Дата и время окончания резервирования"""
         result = None
         if self.is_complete:
             result = datetime.combine(self.__start_date, self.__start_time)

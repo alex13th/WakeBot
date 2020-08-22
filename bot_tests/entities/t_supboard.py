@@ -8,7 +8,7 @@ class SupboardTestCase(BaseTestCase):
     """A Supboard class tests """
 
     def setUp(self):
-        self.user = User("Firstname")
+        self.user = User("Firstname", phone_number="+777")
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
         self.minutes = 30  # продолжительность

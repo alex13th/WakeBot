@@ -40,7 +40,8 @@ class RuReserve(RuGeneral):
     list_footer = ("Для получения дополнительной информации, "
                    "нажмите на кнопку с номером бронирования")
 
-    restrict_list_header = ("⛔️ *ВНИМАНИЕ!\n"
+    icon_stop = "⛔️"
+    restrict_list_header = (f"{icon_stop} *ВНИМАНИЕ!\n"
                             "Совпадение с активными бронированиями:*")
 
     main_callback = "Главное меню"
@@ -54,6 +55,7 @@ class RuReserve(RuGeneral):
     start_book_button = f"Начать {book_text.lower()}"
     start_book_button_callback = book_text
 
+    phone_regex = "\\+\\d{10}"
     icon_phone = "📞"
     phone_text = "Телефон"
     phone_label = f"*{phone_text}:*"
@@ -61,8 +63,9 @@ class RuReserve(RuGeneral):
     phone_button_callback = "Введите номер телефона"
     phone_reply_button = "Отправить номер телефона"
     phone_refuse_button = "Не отправлять номер"
-    phone_message = ("Отправьте номер Вашего телефона простым сообщением")
+    phone_message = ("Напишите номер телефона в формате +7XXXXXXXXXX")
     phone_success_message = "Ваш номер успешно внесен."
+    phone_error_message = f"{icon_stop} Номер указан в неверном формате"
 
     date_format = "%d.%m.%Y"
     date_text = "Дата"
