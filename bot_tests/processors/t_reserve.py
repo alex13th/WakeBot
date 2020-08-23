@@ -1,5 +1,5 @@
 from ..base_test_case import BaseTestCase
-from ..mocks.aiogram import Dispatcher
+from ..mocks.aiogram import Bot, Dispatcher, CallbackQuery
 
 from datetime import date, time, timedelta
 
@@ -8,7 +8,7 @@ from wakebot.adapters.state import StateManager
 from wakebot.processors import RuReserve, ReserveProcessor
 from wakebot.entities import Reserve
 
-from aiogram.types import Message, CallbackQuery, Chat, User
+from aiogram.types import Message, Chat, User
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
@@ -41,6 +41,7 @@ class ReserveProcessorTestCase(BaseTestCase):
         self.test_message = message
 
         callback = CallbackQuery()
+        callback.bot = Bot()
         callback.answer = self.callback_answer_mock
         callback.message = message
         callback.from_user = User()

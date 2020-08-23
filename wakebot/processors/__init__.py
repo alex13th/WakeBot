@@ -33,7 +33,7 @@ class RuReserve(RuGeneral):
     service_label = f"*{service_text}:*"
     service_type_text = "Бронирование"
 
-    book_message = "Выберите действие:"
+    # book_message = "Выберите действие:"
 
     list_header = "*Список бронирований:*"
     list_empty = "На текущий момент нет активных бронирований"

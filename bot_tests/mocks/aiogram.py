@@ -14,3 +14,7 @@ class Dispatcher:
 
     def register_callback_query_handler(self, callback, filters=None):
         pass
+
+
+class CallbackQuery:
+    bot = Bot()
