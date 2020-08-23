@@ -146,7 +146,9 @@ class ReserveProcessor(StatedProcessor):
 
         self.state_manager.set_data(self.data_adapter.append_data(reserve))
 
-        reserve = self.state_manager.data
+        if (not reserve.user.user_id) and self.user_data_adapter:
+            reserve.user = self.user_data_adapter.append_data(reserve.user)
+        # reserve = self.state_manager.data
         text = self.create_book_text(reserve, check=False, show_contact=True)
         reply_markup = None
         answer = self.strings.apply_button_callback

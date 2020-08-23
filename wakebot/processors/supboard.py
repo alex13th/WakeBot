@@ -94,8 +94,8 @@ class SupboardProcessor(ReserveProcessor):
             user = User(from_user.first_name, from_user.last_name,
                         displayname=from_user.full_name,
                         telegram_id=from_user.id)
-            if self.user_data_adapter:
-                user = self.user_data_adapter.append_data(user)
+            # if self.user_data_adapter:
+            #     user = self.user_data_adapter.append_data(user)
 
         reserve.user = user
 
