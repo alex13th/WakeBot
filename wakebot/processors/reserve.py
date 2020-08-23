@@ -118,7 +118,8 @@ class ReserveProcessor(StatedProcessor):
         text, reply_markup, state, answer = self.create_book_message()
         answer = await message.answer(text, reply_markup=reply_markup,
                                       parse_mode=self.parse_mode)
-        await message.reply_to_message.delete()
+        if message.reply_to_message:
+            await message.reply_to_message.delete()
         await message.delete()
 
         await message.answer(text=reply_text,
