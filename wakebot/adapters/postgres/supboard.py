@@ -5,11 +5,11 @@ from ...entities import Supboard, User
 
 
 class PostgressSupboardAdapter(ReserveDataAdapter):
-    """Supboard SQLite data adapter class
+    """Supboard PostgreSQL data adapter class
 
     Attributes:
         connection:
-            A SQLite connection instance.
+            A PostgreSQL connection instance.
     """
 
     def __init__(self, connection, table_name="sup_reserves"):
@@ -57,6 +57,9 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                     middlename, displayname, telegram_id, start_time,
                     set_type_id, set_count, count """
                 f" FROM {self.__table_name}")
+
+            self.__connection.commit()
+
             for row in cursor:
                 user = User(row[1])
                 user.lastname = row[2]
@@ -86,6 +89,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                 """ WHERE NOT canceled
                         and start_time >= %s
                     ORDER BY start_time""", [datetime.today()])
+
+            self.__connection.commit()
 
             for row in cursor:
                 user = User(row[1])
@@ -118,6 +123,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                         set_count, count, canceled, cancel_telegram_id
                         """
                 f"  FROM {self.__table_name} WHERE id = %s", [id])
+
+            self.__connection.commit()
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -160,6 +167,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                     ORDER BY start_time""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
+            self.__connection.commit()
+
             for row in cursor:
                 user = User(row[1])
                 user.lastname = row[2]
@@ -195,6 +204,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                         or (%s < start_time and %s > start_time)
                         or (%s > start_time and %s < end_time))""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
+
+            self.__connection.commit()
 
             if cursor:
                 row = list(cursor)
@@ -269,6 +280,7 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                     reserve.canceled,
                     reserve.cancel_telegram_id,
                     reserve.id))
+
             self.__connection.commit()
 
     def remove_data_by_keys(self, id: int):

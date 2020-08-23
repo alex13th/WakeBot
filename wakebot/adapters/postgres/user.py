@@ -47,6 +47,9 @@ class PostgresUserAdapter(UserDataAdapter):
                 """SELECT id, firstname, lastname, middlename, displayname,
                    telegram_id, phone_number, is_admin"""
                 f" FROM {self.__table_name}")
+
+            self.__connection.commit()
+
             for row in cursor:
                 yield User(
                     user_id=row[0],
@@ -76,6 +79,8 @@ class PostgresUserAdapter(UserDataAdapter):
                     telegram_id, phone_number, is_admin"""
                 f" FROM {self.__table_name}"
                 "    WHERE id = %s", [id])
+
+            self.__connection.commit()
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -112,6 +117,8 @@ class PostgresUserAdapter(UserDataAdapter):
                 f" FROM {self.__table_name}"
                 "  WHERE telegram_id = %s", [telegram_id])
 
+            self.__connection.commit()
+
             rows = list(cursor)
             if len(rows) == 0:
                 return None
@@ -128,6 +135,32 @@ class PostgresUserAdapter(UserDataAdapter):
                 phone_number=row[6],
                 is_admin=bool(row[7])
             )
+
+    def get_admins(self) -> iter:
+        """Get administrators list from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        with self.__connection.cursor() as cursor:
+            cursor.execute(
+                """ SELECT id, firstname, lastname, middlename, displayname,
+                        telegram_id, phone_number, is_admin"""
+                f" FROM {self.__table_name} WHERE is_admin")
+
+            self.__connection.commit()
+
+            for row in cursor:
+                yield User(
+                    user_id=row[0],
+                    firstname=row[1],
+                    lastname=row[2],
+                    middlename=row[3],
+                    displayname=row[4],
+                    telegram_id=row[5],
+                    phone_number=row[6],
+                    is_admin=bool(row[7])
+                )
 
     def append_data(self, user: User) -> User:
         """Append new data to storage
@@ -184,6 +217,7 @@ class PostgresUserAdapter(UserDataAdapter):
                     user.is_admin,
                     user.user_id
                 ))
+
             self.__connection.commit()
 
     def remove_data_by_keys(self, id: int):
@@ -199,27 +233,5 @@ class PostgresUserAdapter(UserDataAdapter):
         with self.__connection.cursor() as cursor:
             cursor.execute(
                 f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
+
             self.__connection.commit()
-
-    def get_admins(self) -> iter:
-        """Get administrators list from storage
-
-        Returns:
-            A iterator object of given data
-        """
-        with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, is_admin"""
-                f" FROM {self.__table_name} WHERE is_admin")
-            for row in cursor:
-                yield User(
-                    user_id=row[0],
-                    firstname=row[1],
-                    lastname=row[2],
-                    middlename=row[3],
-                    displayname=row[4],
-                    telegram_id=row[5],
-                    phone_number=row[6],
-                    is_admin=bool(row[7])
-                )

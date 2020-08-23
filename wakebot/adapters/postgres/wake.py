@@ -6,11 +6,11 @@ from ...entities.user import User
 
 
 class PostgressWakeAdapter(ReserveDataAdapter):
-    """Wakeboard SQLite data adapter class
+    """Wakeboard PostgreSQL data adapter class
 
     Attributes:
         connection:
-            A SQLite connection instance.
+            A PostgreSQL connection instance.
     """
 
     def __init__(self, connection, table_name="wake_reserves"):
@@ -59,6 +59,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     set_type_id, set_count, board, hydro,
                     canceled, cancel_telegram_id"""
                 f" FROM {self.__table_name}")
+
+            self.__connection.commit()
+
             for row in cursor:
                 user = User(row[1])
                 user.lastname = row[2]
@@ -88,6 +91,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                 f"  FROM {self.__table_name}"
                 """ WHERE NOT canceled AND start_time >= %s
                     ORDER BY start_time""", [datetime.today()])
+
+            self.__connection.commit()
 
             for row in cursor:
                 user = User(row[1])
@@ -133,6 +138,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             user.phone_number = row[6]
             start = row[7]
 
+            self.__connection.commit()
+
             return Wake(
                 id=row[0], user=user,
                 start_date=start.date(), start_time=start.time(),
@@ -160,6 +167,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                         or (%s > start_time and %s < end_time))
                     ORDER BY start_time""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
+
+            self.__connection.commit()
 
             for row in cursor:
                 user = User(row[1])
@@ -196,6 +205,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                         or (%s < start_time and %s > start_time)
                         or (%s > start_time and %s < end_time))""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
+
+            self.__connection.commit()
 
             if cursor:
                 row = list(cursor)
