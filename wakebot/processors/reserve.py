@@ -122,7 +122,8 @@ class ReserveProcessor(StatedProcessor):
         await message.delete()
 
         await message.answer(text=reply_text,
-                             reply_markup=ReplyKeyboardRemove())
+                             reply_markup=ReplyKeyboardRemove(),
+                             parse_mode=self.parse_mode)
 
         self.update_state(answer, message_state=True)
 
