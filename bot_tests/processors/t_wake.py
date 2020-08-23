@@ -443,7 +443,7 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         del self.reserves[3]
         reserve = self.wake_adapter.get_data_by_keys(4)
 
-        passed, alert = self.assert_params(reserve, None)
+        passed, alert = self.assert_params(reserve.canceled, True)
         assert passed, alert
 
         text = self.create_list_text()

@@ -30,6 +30,13 @@ class Supboard(Reserve):
             A integer value of set's count.
         count:
             An integer value of a supboard equipment rent need
+        id:
+            An integer wakeboard reservation identifier
+        canceled:
+            Optional. A boolean meaning that a reserevation is canceled
+        cancel_telegram_id:
+            Optional. An integer telegram identifier
+            of user canceled a reserevation
     """
 
     def __init__(self,
@@ -39,7 +46,9 @@ class Supboard(Reserve):
                  set_type_id: str = "set",
                  set_count: int = 1,
                  count: int = 1,
-                 id: Union[int, None] = None):
+                 id: Union[int, None] = None,
+                 canceled: Union[bool, None] = False,
+                 cancel_telegram_id: Union[int, None] = None):
         """Wakeboard reservation data class
 
         Args:
@@ -53,15 +62,22 @@ class Supboard(Reserve):
                 A reservation set type instances.
             set_count:
                 A integer value of set's count.
-            id:
-                An integer wakeboard reservation identifier
             count:
                 An integer value of a supboard equipment rent need
+            id:
+                An integer wakeboard reservation identifier
+            canceled:
+                Optional. A boolean meaning that a reserevation is canceled
+            cancel_telegram_id:
+                Optional. An integer telegram identifier
+                of user canceled a reserevation
         """
         super().__init__(user=user,
                          start_date=start_date, start_time=start_time,
                          set_type_id=set_type_id, set_count=set_count,
-                         count=count, id=id)
+                         count=count, id=id,
+                         canceled=canceled,
+                         cancel_telegram_id=cancel_telegram_id)
 
         if set_type_id == "hour":
             self.set_type = ReserveSetType(set_type_id, 60)

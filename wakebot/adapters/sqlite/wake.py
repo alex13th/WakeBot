@@ -59,7 +59,7 @@ class SqliteWakeAdapter(ReserveDataAdapter):
             """ SELECT id, firstname, lastname, middlename, displayname,
                     telegram_id, start, set_type_id, set_count, board, hydro"""
             f"  FROM {self.__table_name}"
-            """ WHERE start >= ?
+            """ WHERE NOT canceled and start >= ?
                 ORDER BY start""", [datetime.today().timestamp()])
         for row in cursor:
             user = User(row[1])
@@ -89,7 +89,7 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         rows = list(cursor.execute(
             """SELECT id, firstname, lastname, middlename, displayname,
                     telegram_id, phone_number, start, set_type_id, set_count,
-                    board, hydro"""
+                    board, hydro, canceled, cancel_telegram_id"""
             f" FROM {self.__table_name} WHERE id = ?", [id]))
 
         if len(rows) == 0:
@@ -108,7 +108,8 @@ class SqliteWakeAdapter(ReserveDataAdapter):
             id=row[0], user=user,
             start_date=start.date(), start_time=start.time(),
             set_type_id=row[8], set_count=row[9],
-            board=row[10], hydro=row[11])
+            board=row[10], hydro=row[11],
+            canceled=row[12], cancel_telegram_id=row[13])
 
     def get_concurrent_reserves(self, reserve: Wake) -> iter:
         """Get an concurrent reservations from storage
@@ -125,8 +126,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
                     telegram_id, phone_number, start, end,
                     set_type_id, set_count, board, hydro, count"""
             f"  FROM {self.__table_name}"
-            """ WHERE (? = start) or (? < start and ? > start) or
-                      (? > start and ? < end)
+            """ WHERE NOT canceled
+                    and ((? = start) or (? < start and ? > start)
+                    or (? > start and ? < end))
                 ORDER BY start""",
             (start_ts, start_ts, end_ts, start_ts, start_ts))
 
@@ -161,8 +163,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
         cursor = cursor.execute(
             "   SELECT SUM(count) AS concurrent_count"
             f"  FROM {self.__table_name}"
-            """ WHERE (? = start) or (? < start and ? > start) or
-                      (? > start and ? < end)
+            """ WHERE NOT canceled
+                    and ((? = start) or (? < start and ? > start)
+                    or (? > start and ? < end))
                 ORDER BY start""",
             (start_ts, start_ts, end_ts, start_ts, start_ts))
 
@@ -218,7 +221,8 @@ class SqliteWakeAdapter(ReserveDataAdapter):
             """     firstname = ?, lastname = ?, middlename = ?, displayname = ?,
                     phone_number = ?, telegram_id = ?, start = ?, end = ?,
                     set_type_id = ?, set_count = ?,
-                    board = ?, hydro = ?, count = ?
+                    board = ?, hydro = ?, count = ?,
+                    canceled = ?, cancel_telegram_id = ?
                 WHERE id = ?
            """, (
                 reserve.user.firstname,
@@ -234,8 +238,9 @@ class SqliteWakeAdapter(ReserveDataAdapter):
                 reserve.board,
                 reserve.hydro,
                 reserve.count,
-                reserve.id
-            ))
+                reserve.canceled,
+                reserve.cancel_telegram_id,
+                reserve.id))
         self.__connection.commit()
 
     def remove_data_by_keys(self, id: int):
@@ -269,7 +274,8 @@ class SqliteWakeAdapter(ReserveDataAdapter):
                     end TIMESTAMP,
                     set_type_id text,
                     set_count integer,
-                    board integer, hydro integer, count integer)
+                    board integer, hydro integer, count integer,
+                    canceled integer DEFAULT 0, cancel_telegram_id integer)
             """)
 
         self.connection.commit()

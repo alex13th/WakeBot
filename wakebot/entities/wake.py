@@ -32,6 +32,11 @@ class Wake(Reserve):
             An integer value of a wakeboard equipment rent need
         hydro:
             An integer value of a hydrosuite equipment rent need
+        canceled:
+            Optional. A boolean meaning that a reserevation is canceled
+        cancel_telegram_id:
+            Optional. An integer telegram identifier
+            of user canceled a reserevation
     """
 
     def __init__(self,
@@ -42,7 +47,9 @@ class Wake(Reserve):
                  set_count: int = 1,
                  id: Union[int, None] = None,
                  board: Optional[int] = 0,
-                 hydro: Optional[int] = 0):
+                 hydro: Optional[int] = 0,
+                 canceled: Union[bool, None] = False,
+                 cancel_telegram_id: Union[int, None] = None):
         """Wakeboard reservation data class
 
         Args:
@@ -64,10 +71,17 @@ class Wake(Reserve):
                 An integer value of a hydrosuite equipment rent need
             id:
                 An integer wakeboard reservation identifier
+            canceled:
+                Optional. A boolean meaning that a reserevation is canceled
+            cancel_telegram_id:
+                Optional. An integer telegram identifier
+                of user canceled a reserevation
         """
         super().__init__(user=user,
                          start_date=start_date, start_time=start_time,
-                         set_type_id=set_type_id, set_count=set_count, id=id)
+                         set_type_id=set_type_id, set_count=set_count, id=id,
+                         canceled=canceled,
+                         cancel_telegram_id=cancel_telegram_id)
 
         if set_type_id == "hour":
             self.set_type = ReserveSetType(set_type_id, 60)

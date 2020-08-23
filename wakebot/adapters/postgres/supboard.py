@@ -38,7 +38,9 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                     end_time timestamp,
                     set_type_id varchar(20),
                     set_count integer,
-                    count integer)""")
+                    count integer,
+                    canceled boolean DEFAULT false,
+                    cancel_telegram_id integer)""")
 
         self.__connection.commit()
 
@@ -81,7 +83,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                         telegram_id, start_time, set_type_id,
                         set_count, count"""
                 f"  FROM {self.__table_name}"
-                """ WHERE start_time >= %s
+                """ WHERE NOT canceled
+                        and start_time >= %s
                     ORDER BY start_time""", [datetime.today()])
 
             for row in cursor:
@@ -112,7 +115,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
             cursor.execute(
                 """ SELECT id, firstname, lastname, middlename, displayname,
                         telegram_id, phone_number, start_time, set_type_id,
-                        set_count, count"""
+                        set_count, count, canceled, cancel_telegram_id
+                        """
                 f"  FROM {self.__table_name} WHERE id = %s", [id])
 
             rows = list(cursor)
@@ -132,7 +136,7 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                 id=row[0], user=user,
                 start_date=start.date(), start_time=start.time(),
                 set_type_id=row[8], set_count=row[9],
-                count=row[10])
+                count=row[10], canceled=row[11], cancel_telegram_id=row[12])
 
     def get_concurrent_reserves(self, reserve: Supboard) -> iter:
         """Get an concurrent reservations from storage
@@ -149,9 +153,10 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                         telegram_id, phone_number, start_time,
                         set_type_id, set_count, count"""
                 f"  FROM {self.__table_name}"
-                """ WHERE (%s = start_time)
+                """ WHERE NOT canceled
+                        and ((%s = start_time)
                         or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time)
+                        or (%s > start_time and %s < end_time))
                     ORDER BY start_time""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
@@ -185,9 +190,10 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
             cursor.execute(
                 "   SELECT SUM(count) AS concurrent_count"
                 f"  FROM {self.__table_name}"
-                """ WHERE (%s = start_time)
+                """ WHERE NOT canceled
+                        and ((%s = start_time)
                         or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time)""",
+                        or (%s > start_time and %s < end_time))""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
             if cursor:
@@ -246,7 +252,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                 """     firstname = %s, lastname = %s, middlename = %s,
                         displayname = %s, phone_number = %s, telegram_id = %s,
                         start_time = %s, end_time = %s, set_type_id = %s,
-                        set_count = %s, count = %s"""
+                        set_count = %s, count = %s,
+                        canceled = %s, cancel_telegram_id = %s"""
                 "   WHERE id = %s", (
                     reserve.user.firstname,
                     reserve.user.lastname,
@@ -259,6 +266,8 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                     reserve.set_type.set_id,
                     reserve.set_count,
                     reserve.count,
+                    reserve.canceled,
+                    reserve.cancel_telegram_id,
                     reserve.id))
             self.__connection.commit()
 

@@ -57,7 +57,7 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
             """ SELECT id, firstname, lastname, middlename, displayname,
                     telegram_id, start, set_type_id, set_count, count"""
             f"  FROM {self.__table_name}"
-            """ WHERE start >= ?
+            """ WHERE NOT canceled and start >= ?
                 ORDER BY start""", [datetime.today().timestamp()])
         for row in cursor:
             user = User(row[1])
@@ -86,7 +86,8 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
         rows = list(cursor.execute(
             """SELECT id, firstname, lastname, middlename, displayname,
                     telegram_id, phone_number, start,
-                    set_type_id, set_count, count"""
+                    set_type_id, set_count, count,
+                    canceled, cancel_telegram_id"""
             f" FROM {self.__table_name} WHERE id = ?", [id]))
 
         if len(rows) == 0:
@@ -104,7 +105,8 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
         return Supboard(
             id=row[0], user=user,
             start_date=start.date(), start_time=start.time(),
-            set_type_id=row[8], set_count=row[9], count=row[10])
+            set_type_id=row[8], set_count=row[9], count=row[10],
+            canceled=row[11], cancel_telegram_id=row[12])
 
     def get_concurrent_reserves(self, reserve: Supboard) -> iter:
         """Get an concurrent reservations from storage
@@ -121,8 +123,9 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
                     telegram_id, phone_number, start,
                     set_type_id, set_count, count"""
             f"  FROM {self.__table_name}"
-            """ WHERE (? = start) or (? < start and ? > start) or
-                      (? > start and ? < end)
+            """ WHERE NOT canceled
+                    and ((? = start) or (? < start and ? > start)
+                    or (? > start and ? < end))
                 ORDER BY start""",
             (start_ts, start_ts, end_ts, start_ts, start_ts))
 
@@ -155,8 +158,9 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
         cursor = cursor.execute(
             "   SELECT SUM(count) AS concurrent_count"
             f"  FROM {self.__table_name}"
-            """ WHERE (? = start) or (? < start and ? > start) or
-                      (? > start and ? < end)
+            """ WHERE NOT canceled
+                    and ((? = start) or (? < start and ? > start) or
+                    (? > start and ? < end))
                 ORDER BY start""",
             (start_ts, start_ts, end_ts, start_ts, start_ts))
 
@@ -209,7 +213,8 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
             f"  UPDATE {self.__table_name} SET"
             """     firstname = ?, lastname = ?, middlename = ?, displayname = ?,
                     phone_number = ?, telegram_id = ?, start = ?, end = ?,
-                    set_type_id = ?, set_count = ?, count = ?
+                    set_type_id = ?, set_count = ?, count = ?,
+                    canceled = ?, cancel_telegram_id = ?
                 WHERE id = ?
            """, (
                 reserve.user.firstname,
@@ -223,8 +228,10 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
                 reserve.set_type.set_id,
                 reserve.set_count,
                 reserve.count,
-                reserve.id
-            ))
+                reserve.canceled,
+                reserve.cancel_telegram_id,
+                reserve.id))
+
         self.__connection.commit()
 
     def remove_data_by_keys(self, id: int):
@@ -258,7 +265,8 @@ class SqliteSupboardAdapter(ReserveDataAdapter):
                     end TIMESTAMP,
                     set_type_id text,
                     set_count integer,
-                    count integer)
+                    count integer,
+                    canceled integer DEFAULT 0, cancel_telegram_id integer)
             """)
 
         self.connection.commit()

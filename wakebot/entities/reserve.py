@@ -39,6 +39,10 @@ class Reserve:
             An integer value of count reservation pieces
         id:
             An integer wakeboard reservation identifier
+        canceled:
+            A boolean meaning that a reserevation is canceled
+        cancel_telegram_id:
+            An integer telegram identifier of user canceled a reserevation
     """
 
     user: Optional[User]
@@ -47,6 +51,8 @@ class Reserve:
     set_type: Union[str, int, None]
     set_count: int
     count: int
+    canceled: bool
+    cancel_telegram_id: int
 
     def __init__(self,
                  user: Optional[User] = None,
@@ -54,7 +60,9 @@ class Reserve:
                  start_time: Optional[time] = None,
                  set_type_id: str = "set",
                  set_count: int = 1, count: int = 1,
-                 id: Union[int, None] = None):
+                 id: Union[int, None] = None,
+                 canceled: Union[bool, None] = False,
+                 cancel_telegram_id: Union[int, None] = None):
         """Reservation data class
 
         Args:
@@ -72,6 +80,11 @@ class Reserve:
                 A integer value of equipment count.
             id:
                 Optional. An integer wakeboard reservation identifier
+            canceled:
+                Optional. A boolean meaning that a reserevation is canceled
+            cancel_telegram_id:
+                Optional. An integer telegram identifier
+                of user canceled a reserevation
         """
         if set_type_id == "hour":
             self.set_type = ReserveSetType(set_type_id, 60)
@@ -84,6 +97,8 @@ class Reserve:
         self.set_count = set_count
         self.count = count
         self.id = id
+        self.canceled = bool(canceled)
+        self.cancel_telegram_id = cancel_telegram_id
 
     @property
     def is_complete(self) -> bool:

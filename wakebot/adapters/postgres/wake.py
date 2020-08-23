@@ -39,7 +39,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     end_time timestamp,
                     set_type_id varchar(20),
                     set_count integer,
-                    board integer, hydro integer, count integer)""")
+                    board integer, hydro integer, count integer,
+                    canceled boolean DEFAULT false,
+                    cancel_telegram_id integer)""")
 
         self.__connection.commit()
 
@@ -54,7 +56,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                 """SELECT
                     id, firstname, lastname,
                     middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, board, hydro """
+                    set_type_id, set_count, board, hydro,
+                    canceled, cancel_telegram_id"""
                 f" FROM {self.__table_name}")
             for row in cursor:
                 user = User(row[1])
@@ -68,7 +71,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     id=row[0], user=user,
                     start_date=start.date(), start_time=start.time(),
                     set_type_id=row[7], set_count=row[8],
-                    board=row[9], hydro=row[10])
+                    board=row[9], hydro=row[10],
+                    canceled=row[11], cancel_telegram_id=row[12])
 
     def get_active_reserves(self) -> iter:
         """Get an active wakeboard reservations from storage
@@ -82,7 +86,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                         telegram_id, start_time, set_type_id, set_count,
                         board, hydro"""
                 f"  FROM {self.__table_name}"
-                """ WHERE start_time >= %s
+                """ WHERE NOT canceled AND start_time >= %s
                     ORDER BY start_time""", [datetime.today()])
 
             for row in cursor:
@@ -150,9 +154,10 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                         telegram_id, phone_number, start_time, end_time,
                         set_type_id, set_count, board, hydro, count"""
                 f"  FROM {self.__table_name}"
-                """ WHERE (%s = start_time)
+                """ WHERE NOT canceled
+                        and ((%s = start_time)
                         or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time)
+                        or (%s > start_time and %s < end_time))
                     ORDER BY start_time""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
@@ -186,9 +191,10 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             cursor.execute(
                 "   SELECT SUM(count) AS concurrent_count"
                 f"  FROM {self.__table_name}"
-                """ WHERE (%s = start_time)
+                """ WHERE NOT canceled
+                        and ((%s = start_time)
                         or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time)""",
+                        or (%s > start_time and %s < end_time))""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
             if cursor:
@@ -250,7 +256,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                 """     firstname = %s, lastname = %s, middlename = %s,
                         displayname = %s, phone_number = %s, telegram_id = %s,
                         start_time = %s, end_time = %s, set_type_id = %s,
-                        set_count = %s, board = %s, hydro = %s, count = %s"""
+                        set_count = %s, board = %s, hydro = %s, count = %s,
+                        canceled = %s, cancel_telegram_id = %s"""
                 "   WHERE id = %s", (
                     reserve.user.firstname,
                     reserve.user.lastname,
@@ -265,6 +272,8 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     reserve.board,
                     reserve.hydro,
                     reserve.count,
+                    reserve.canceled,
+                    reserve.cancel_telegram_id,
                     reserve.id))
             self.__connection.commit()
 

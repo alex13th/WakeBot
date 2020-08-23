@@ -370,7 +370,10 @@ class ReserveProcessor(StatedProcessor):
 
         elif callback_query.data.startswith("cancel-"):
             reserve_id = int(callback_query.data[7:])
-            self.data_adapter.remove_data_by_keys(reserve_id)
+            reserve = self.data_adapter.get_data_by_keys(reserve_id)
+            reserve.canceled = True
+            reserve.cancel_telegram_id = callback_query.from_user.id
+            self.data_adapter.update_data(reserve)
             text, reply_markup, state, answer = self.create_list_message(True)
             answer = self.strings.cancel_button_callback
 
