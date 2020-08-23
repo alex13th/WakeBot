@@ -206,7 +206,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         await self.processor.callback_main(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "wake", "book")
 
     async def test_callback_main_list(self):
@@ -278,7 +280,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         await self.processor.callback_board(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "wake", "book")
 
     async def test_callback_board_count(self):
@@ -301,7 +305,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         passed, alert = self.assert_params(2, reserve.board)
         assert passed, alert
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "wake", "book")
 
     async def test_callback_book_hydro(self):
@@ -337,7 +343,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
 
         await self.processor.callback_hydro(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "wake", "book")
 
     async def test_callback_hydro_count(self):
@@ -360,7 +368,9 @@ class WakeProcessorTestCase(ReserveProcessorTestCase):
         passed, alert = self.assert_params(3, reserve.hydro)
         assert passed, alert
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "wake", "book")
 
     async def test_callback_book_apply(self):

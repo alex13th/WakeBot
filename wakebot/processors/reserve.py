@@ -518,10 +518,15 @@ class ReserveProcessor(StatedProcessor):
             conflicted, concurrent_text = self.check_concurrents(reserve)
             if conflicted:
                 text += concurrent_text
+
+        if not reserve.user.phone_number:
+            text += f"\n{self.strings.phone_warning}"
+
         ready = reserve.is_complete and not conflicted
         reply_markup = self.create_book_keyboard(ready)
-        state = "book"
+
         answer = self.strings.start_book_button_callback
+        state = "book"
 
         return (text, reply_markup, state, answer)
 

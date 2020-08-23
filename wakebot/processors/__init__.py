@@ -33,8 +33,6 @@ class RuReserve(RuGeneral):
     service_label = f"*{service_text}:*"
     service_type_text = "Бронирование"
 
-    # book_message = "Выберите действие:"
-
     list_header = "*Список бронирований:*"
     list_empty = "На текущий момент нет активных бронирований"
     list_footer = ("Для получения дополнительной информации, "
@@ -61,11 +59,10 @@ class RuReserve(RuGeneral):
     phone_label = f"*{phone_text}:*"
     phone_button = f"{icon_phone} Внести {phone_text}"
     phone_button_callback = "Введите номер телефона"
-    phone_reply_button = "Отправить номер телефона"
-    phone_refuse_button = "Не отправлять номер"
     phone_message = ("Напишите номер телефона в формате +7XXXXXXXXXX")
     phone_success_message = "Ваш номер успешно внесен."
     phone_error_message = f"{icon_stop} Номер указан в неверном формате"
+    phone_warning = "⚠️ Обязательно укажите номер телефона."
 
     date_format = "%d.%m.%Y"
     date_text = "Дата"

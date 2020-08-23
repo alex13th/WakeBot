@@ -301,7 +301,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_main(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_book_back(self):
@@ -355,7 +357,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_date(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_date_date(self):
@@ -377,7 +381,10 @@ class ReserveProcessorTestCase(BaseTestCase):
         passed, alert = self.assert_params(date.today() + timedelta(1),
                                            reserve.start_date)
         assert passed, alert
-        self.check_state(state_key, self.create_book_text(),
+
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_book_time(self):
@@ -441,7 +448,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_hour(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_minute(self):
@@ -507,7 +516,9 @@ class ReserveProcessorTestCase(BaseTestCase):
         assert passed, alert
 
         reply_markup = self.create_book_keyboard()
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_book_set(self):
@@ -542,7 +553,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_set(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_set_count(self):
@@ -568,7 +581,9 @@ class ReserveProcessorTestCase(BaseTestCase):
         passed, alert = self.assert_params("set", reserve.set_type.set_id)
         assert passed, alert
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_book_set_hour(self):
@@ -603,7 +618,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_set_hour(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_set_hour_count(self):
@@ -629,7 +646,9 @@ class ReserveProcessorTestCase(BaseTestCase):
         passed, alert = self.assert_params("hour", reserve.set_type.set_id)
         assert passed, alert
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "reserve", "book")
 
     async def test_callback_main_list(self):

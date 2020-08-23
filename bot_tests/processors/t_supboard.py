@@ -198,7 +198,9 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
 
         await self.processor.callback_main(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        text = self.create_book_text()
+        text += f"\n{self.strings.phone_warning}"
+        self.check_state(state_key, text,
                          reply_markup, "sup", "book")
 
     async def test_callback_main_list(self):
