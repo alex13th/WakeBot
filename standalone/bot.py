@@ -6,7 +6,6 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 
-from wakebot.processors import RuDefault, RuSupboard, RuWake
 from wakebot.processors.default import DefaultProcessor
 from wakebot.processors import WakeProcessor, SupboardProcessor
 from wakebot.adapters.data import MemoryDataAdapter
@@ -14,7 +13,8 @@ from wakebot.adapters.state import StateManager
 from wakebot.adapters.postgres import PostgressWakeAdapter
 from wakebot.adapters.postgres import PostgressSupboardAdapter
 from wakebot.adapters.postgres import PostgresUserAdapter
-# from config import TOKEN
+
+from config import DefaultStrings, WakeStrings, SupboardStrings
 
 TOKEN = os.environ["TOKEN"]
 DATABASE_URL = os.environ["DATABASE_URL"]
@@ -26,21 +26,21 @@ dp.middleware.setup(LoggingMiddleware())
 
 state_manager = StateManager(MemoryDataAdapter())
 
-default_processor = DefaultProcessor(dp, RuDefault)
+default_processor = DefaultProcessor(dp, DefaultStrings)
 connection = psycopg2.connect(DATABASE_URL)
 user_adapter = PostgresUserAdapter(connection, "wp38_users")
 
 wake_adapter = PostgressWakeAdapter(connection, "wp38_wake")
 wake_processor = WakeProcessor(dp,
                                state_manager=state_manager,
-                               strings=RuWake,
+                               strings=WakeStrings,
                                data_adapter=wake_adapter,
                                user_data_adapter=user_adapter)
 
 sup_adapter = PostgressSupboardAdapter(connection, "wp38_supboard")
 sup_processor = SupboardProcessor(dp,
                                   state_manager=state_manager,
-                                  strings=RuSupboard,
+                                  strings=SupboardStrings,
                                   data_adapter=sup_adapter,
                                   user_data_adapter=user_adapter)
 sup_processor.max_count = 6
