@@ -98,6 +98,9 @@ class RuReserve(RuGeneral):
     name_text = "Имя"
     name_label = f"*{name_text}:*"
 
+    admin_text = "Администратор"
+    admin_label = f"*{admin_text}:*"
+
     count_text = "Количество"
     count_label = f"*{count_text}:*"
     count_button = f"{count_text}"
@@ -111,6 +114,7 @@ class RuReserve(RuGeneral):
 
     cancel_button = f"❌ Отменить {book_text.lower()}"
     cancel_button_callback = f"{book_text} отменено"
+    cancel_notify_header = f"❌ *Отменено {book_text.lower()}*"
 
     notify_text = "Оповестить"
     notification_text = "Оповещение"

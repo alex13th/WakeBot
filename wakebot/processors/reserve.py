@@ -4,9 +4,8 @@ from datetime import date, time, timedelta
 
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import Message, CallbackQuery
-from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ForceReply, ReplyKeyboardRemove
-from aiogram.types import KeyboardButton, InlineKeyboardButton
 
 from wakebot.adapters.state import StateManager
 from wakebot.processors.common import StatedProcessor
@@ -37,6 +36,7 @@ class ReserveProcessor(StatedProcessor):
 
     book_handlers: dict
     reserve_set_types: dict
+    user_data_adapter: UserDataAdapter
 
     def __init__(self,
                  dispatcher: Dispatcher,
@@ -370,10 +370,7 @@ class ReserveProcessor(StatedProcessor):
 
         elif callback_query.data.startswith("cancel-"):
             reserve_id = int(callback_query.data[7:])
-            reserve = self.data_adapter.get_data_by_keys(reserve_id)
-            reserve.canceled = True
-            reserve.cancel_telegram_id = callback_query.from_user.id
-            self.data_adapter.update_data(reserve)
+            await self.cancel_reserve(callback_query, reserve_id)
             text, reply_markup, state, answer = self.create_list_message(True)
             answer = self.strings.cancel_button_callback
 
@@ -471,6 +468,38 @@ class ReserveProcessor(StatedProcessor):
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
         await callback_query.answer(answer)
+
+    async def cancel_reserve(self,
+                             callback_query: CallbackQuery,
+                             reserve_id: int):
+        """Cancel reservation
+
+        Args:
+            callback_query:
+                A CallbackQuery instance.
+            reserve_id:
+                An integer reservation identifier.
+        """
+        telegram_id = callback_query.from_user.id
+        reserve = self.data_adapter.get_data_by_keys(reserve_id)
+        reserve.canceled = True
+        reserve.cancel_telegram_id = telegram_id
+        self.data_adapter.update_data(reserve)
+
+        notify_text = self.strings.cancel_notify_header
+        if self.user_data_adapter:
+            admin_name = self.user_data_adapter.get_user_by_telegram_id(
+                telegram_id)
+            notify_text += f"\n{self.strings.admin_label} {admin_name}"
+
+        notify_text += f"\n\n{self.create_book_text(reserve)}"
+
+        for telegram_id in self.admin_telegram_ids:
+            if not telegram_id == callback_query.from_user.id:
+                await callback_query.bot.send_message(
+                    telegram_id, notify_text,
+                    reply_markup=None,
+                    parse_mode=self.parse_mode)
 
     def check_concurrents(self, reserve: Reserve):
         concurs = self.data_adapter.get_concurrent_reserves(reserve)
@@ -1017,20 +1046,6 @@ class ReserveProcessor(StatedProcessor):
                                       callback_data='back')
         result.add(button)
 
-        return result
-
-    # Temporarry unused
-    def create_phone_keyboard(self) -> ReplyKeyboardMarkup:
-        """Create Phone message ReplyKeyboardMarkup
-
-        Returns:
-            A ReplyKeyboardMarkup instance.
-        """
-        result = ReplyKeyboardMarkup(resize_keyboard=True,
-                                     one_time_keyboard=True)
-        result.add(KeyboardButton(self.strings.phone_reply_button,
-                                  request_contact=True))
-        result.add(KeyboardButton(self.strings.phone_refuse_button))
         return result
 
     def create_reserve(self, message: Message) -> Reserve:
