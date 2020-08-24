@@ -6,6 +6,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ForceReply, ReplyKeyboardRemove
+from aiogram.utils.exceptions import ChatNotFound
 
 from wakebot.adapters.state import StateManager
 from wakebot.processors.common import StatedProcessor
@@ -160,12 +161,16 @@ class ReserveProcessor(StatedProcessor):
                                                reply_markup=reply_markup,
                                                parse_mode=self.parse_mode)
         await callback_query.answer(answer)
+
         for telegram_id in self.admin_telegram_ids:
             if not telegram_id == callback_query.from_user.id:
-                await callback_query.bot.send_message(
-                    telegram_id, text,
-                    reply_markup=None,
-                    parse_mode=self.parse_mode)
+                try:
+                    await callback_query.bot.send_message(
+                        telegram_id, text,
+                        reply_markup=None,
+                        parse_mode=self.parse_mode)
+                except ChatNotFound:
+                    pass
 
     async def callback_main(self, callback_query: CallbackQuery):
         """Main menu CallbackQuery handler"""
@@ -496,10 +501,13 @@ class ReserveProcessor(StatedProcessor):
 
         for telegram_id in self.admin_telegram_ids:
             if not telegram_id == callback_query.from_user.id:
-                await callback_query.bot.send_message(
-                    telegram_id, notify_text,
-                    reply_markup=None,
-                    parse_mode=self.parse_mode)
+                try:
+                    await callback_query.bot.send_message(
+                        telegram_id, notify_text,
+                        reply_markup=None,
+                        parse_mode=self.parse_mode)
+                except ChatNotFound:
+                    pass
 
     def check_concurrents(self, reserve: Reserve):
         concurs = self.data_adapter.get_concurrent_reserves(reserve)
