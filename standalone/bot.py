@@ -36,6 +36,7 @@ wake_processor = WakeProcessor(dp,
                                strings=WakeStrings,
                                data_adapter=wake_adapter,
                                user_data_adapter=user_adapter)
+wake_processor.logger_id = 586350636
 
 sup_adapter = PostgressSupboardAdapter(connection, "wp38_supboard")
 sup_processor = SupboardProcessor(dp,
@@ -44,6 +45,7 @@ sup_processor = SupboardProcessor(dp,
                                   data_adapter=sup_adapter,
                                   user_data_adapter=user_adapter)
 sup_processor.max_count = 6
+sup_processor.logger_id = 586350636
 
 if __name__ == "__main__":
     executor.start_polling(dp)

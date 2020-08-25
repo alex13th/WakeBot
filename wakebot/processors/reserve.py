@@ -170,7 +170,11 @@ class ReserveProcessor(StatedProcessor):
                         reply_markup=None,
                         parse_mode=self.parse_mode)
                 except ChatNotFound:
-                    pass
+                    if self.logger_id:
+                        await callback_query.bot.send_message(
+                            self.logger_id, str(telegram_id),
+                            reply_markup=None,
+                            parse_mode=self.parse_mode)
 
     async def callback_main(self, callback_query: CallbackQuery):
         """Main menu CallbackQuery handler"""
