@@ -6,7 +6,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ForceReply, ReplyKeyboardRemove
-from aiogram.utils.exceptions import ChatNotFound
+from aiogram.utils.exceptions import ChatNotFound, BotBlocked
 
 from wakebot.adapters.state import StateManager
 from wakebot.processors.common import StatedProcessor
@@ -170,11 +170,9 @@ class ReserveProcessor(StatedProcessor):
                         reply_markup=None,
                         parse_mode=self.parse_mode)
                 except ChatNotFound:
-                    if self.logger_id:
-                        await callback_query.bot.send_message(
-                            self.logger_id, str(telegram_id),
-                            reply_markup=None,
-                            parse_mode=self.parse_mode)
+                    await self.send_to_logger(f"ChatNotFound: {telegram_id}")
+                except BotBlocked:
+                    await self.send_to_logger(f"BotBlocked: {telegram_id}")
 
     async def callback_main(self, callback_query: CallbackQuery):
         """Main menu CallbackQuery handler"""
@@ -511,7 +509,16 @@ class ReserveProcessor(StatedProcessor):
                         reply_markup=None,
                         parse_mode=self.parse_mode)
                 except ChatNotFound:
-                    pass
+                    await self.send_to_logger(f"ChatNotFound: {telegram_id}")
+                except BotBlocked:
+                    await self.send_to_logger(f"BotBlocked: {telegram_id}")
+
+    async def send_to_logger(self, text):
+        if self.logger_id:
+            await self.dispatcher.bot.send_message(
+                self.logger_id, text,
+                reply_markup=None,
+                parse_mode=self.parse_mode)         
 
     def check_concurrents(self, reserve: Reserve):
         concurs = self.data_adapter.get_concurrent_reserves(reserve)
