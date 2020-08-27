@@ -223,7 +223,9 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         result = InlineKeyboardMarkup(row_width=row_width)
 
-        buttons = [InlineKeyboardButton(f"{start + i}:",
+        buttons = [InlineKeyboardButton(
+                   "{:02d}:".format(start + i) if (start + i) < 24
+                   else "{:02d}:".format(start + i - 24),
                    callback_data=str(i + self.strings.time_zone))
                    for i in range(count)]
 
@@ -339,7 +341,7 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_book(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        self.check_state(state_key, self.create_list_text(),
                          reply_markup, "reserve", "date")
 
     async def test_callback_date_back(self):
@@ -402,7 +404,7 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_book(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        self.check_state(state_key, self.create_list_text(),
                          reply_markup, "reserve", "hour")
 
     async def test_callback_book_phone(self):
@@ -473,7 +475,7 @@ class ReserveProcessorTestCase(BaseTestCase):
                                            reserve.start_time)
         assert passed, alert
 
-        self.check_state(state_key, self.create_book_text(),
+        self.check_state(state_key, self.create_list_text(),
                          reply_markup, "reserve", "minute")
 
     async def test_callback_minute_back(self):
@@ -491,7 +493,7 @@ class ReserveProcessorTestCase(BaseTestCase):
 
         await self.processor.callback_minute(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        self.check_state(state_key, self.create_list_text(),
                          reply_markup, "reserve", "hour")
 
     async def test_callback_minute_minute(self):

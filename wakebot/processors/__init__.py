@@ -149,6 +149,8 @@ class RuReserve(RuGeneral):
     apply_button = f"👌 {apply_text}"
     apply_button_callback = f"{book_text} добавлено"
     apply_error_callback = "Ошибка бронирования"
+    apply_header = ""
+    apply_footer = ""
 
 
 class RuWake(RuReserve):

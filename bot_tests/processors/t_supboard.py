@@ -236,7 +236,7 @@ class SupboardProcessorTestCase(ReserveProcessorTestCase):
 
         await self.processor.callback_book(callback)
 
-        self.check_state(state_key, self.create_book_text(),
+        self.check_state(state_key, self.create_list_text(),
                          reply_markup, "sup", "date")
 
     async def test_callback_book_apply(self):
