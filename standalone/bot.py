@@ -28,9 +28,11 @@ state_manager = StateManager(MemoryDataAdapter())
 
 default_processor = DefaultProcessor(dp, DefaultStrings)
 connection = psycopg2.connect(DATABASE_URL)
-user_adapter = PostgresUserAdapter(connection, "wp38_users")
+user_adapter = PostgresUserAdapter(database_url=DATABASE_URL,
+                                   table_name="wp38_users")
 
-wake_adapter = PostgressWakeAdapter(connection, "wp38_wake")
+wake_adapter = PostgressWakeAdapter(database_url=DATABASE_URL,
+                                    table_name="wp38_wake")
 wake_processor = WakeProcessor(dp,
                                state_manager=state_manager,
                                strings=WakeStrings,
@@ -38,7 +40,8 @@ wake_processor = WakeProcessor(dp,
                                user_data_adapter=user_adapter)
 wake_processor.logger_id = 586350636
 
-sup_adapter = PostgressSupboardAdapter(connection, "wp38_supboard")
+sup_adapter = PostgressSupboardAdapter(database_url=DATABASE_URL,
+                                       table_name="wp38_supboard")
 sup_processor = SupboardProcessor(dp,
                                   state_manager=state_manager,
                                   strings=SupboardStrings,

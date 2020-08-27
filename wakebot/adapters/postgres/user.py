@@ -1,3 +1,4 @@
+import psycopg2
 from typing import Union
 from ..data import UserDataAdapter
 from ...entities.user import User
@@ -10,31 +11,60 @@ class PostgresUserAdapter(UserDataAdapter):
         connection:
             A SQLite connection instance.
     """
+    columns = (
+        "id", "firstname", "lastname", "middlename", "displayname",
+        "telegram_id", "phone_number", "is_admin")
 
-    def __init__(self, connection, table_name="users"):
+    def __init__(self,
+                 connection=None, database_url=None,
+                 table_name="users"):
         self.__connection = connection
+        self.__database_url = database_url
         self.__table_name = table_name
+
+        self.connect()
         self.create_table()
 
     @property
     def connection(self):
         return self.__connection
 
+    def connect(self):
+        try:
+            with self.__connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Exception:
+            self.__connection = psycopg2.connect(self.__database_url)
+
     def create_table(self):
         with self.__connection.cursor() as cursor:
             cursor.execute(
                 f"CREATE TABLE IF NOT EXISTS {self.__table_name}"
-                """(
-                    id SERIAL PRIMARY KEY,
-                    telegram_id integer,
+                """ (id SERIAL PRIMARY KEY,
                     firstname varchar(20),
                     lastname varchar(20),
                     middlename varchar(20),
                     displayname varchar(60),
+                    telegram_id integer,
                     phone_number varchar(20),
                     is_admin boolean)""")
 
             self.connection.commit()
+
+    def get_user_from_row(self, row):
+        user_id = row[self.columns.index("id")]
+        firstname = row[self.columns.index("firstname")]
+        lastname = row[self.columns.index("lastname")]
+        middlename = row[self.columns.index("middlename")]
+        displayname = row[self.columns.index("displayname")]
+        telegram_id = row[self.columns.index("telegram_id")]
+        phone_number = row[self.columns.index("phone_number")]
+        is_admin = row[self.columns.index("is_admin")]
+
+        return User(user_id=user_id, firstname=firstname, lastname=lastname,
+                    middlename=middlename, displayname=displayname,
+                    telegram_id=telegram_id, phone_number=phone_number,
+                    is_admin=is_admin)
 
     def get_data(self) -> iter:
         """Get a full set of data from storage
@@ -43,24 +73,13 @@ class PostgresUserAdapter(UserDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT id, firstname, lastname, middlename, displayname,
-                   telegram_id, phone_number, is_admin"""
-                f" FROM {self.__table_name}")
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}")
 
             self.__connection.commit()
 
             for row in cursor:
-                yield User(
-                    user_id=row[0],
-                    firstname=row[1],
-                    lastname=row[2],
-                    middlename=row[3],
-                    displayname=row[4],
-                    telegram_id=row[5],
-                    phone_number=row[6],
-                    is_admin=bool(row[7])
-                )
+                yield self.get_user_from_row(row)
 
     def get_data_by_keys(self, id: int) -> Union[User, None]:
         """Get a set of data from storage by a keys
@@ -73,12 +92,9 @@ class PostgresUserAdapter(UserDataAdapter):
             A object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT
-                    id, firstname, lastname, middlename, displayname,
-                    telegram_id, phone_number, is_admin"""
-                f" FROM {self.__table_name}"
-                "    WHERE id = %s", [id])
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE id = %s", [id])
 
             self.__connection.commit()
 
@@ -88,16 +104,7 @@ class PostgresUserAdapter(UserDataAdapter):
 
             row = rows[0]
             cursor.close()
-            return User(
-                user_id=row[0],
-                firstname=row[1],
-                lastname=row[2],
-                middlename=row[3],
-                displayname=row[4],
-                telegram_id=row[5],
-                phone_number=row[6],
-                is_admin=bool(row[7])
-            )
+            return self.get_user_from_row(row)
 
     def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
         """Get a user from storage by telegram_id
@@ -110,12 +117,9 @@ class PostgresUserAdapter(UserDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT
-                    id, firstname, lastname, middlename, displayname,
-                    telegram_id, phone_number, is_admin"""
-                f" FROM {self.__table_name}"
-                "  WHERE telegram_id = %s", [telegram_id])
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE telegram_id = %s", [telegram_id])
 
             self.__connection.commit()
 
@@ -125,16 +129,7 @@ class PostgresUserAdapter(UserDataAdapter):
 
             row = rows[0]
             cursor.close()
-            return User(
-                user_id=row[0],
-                firstname=row[1],
-                lastname=row[2],
-                middlename=row[3],
-                displayname=row[4],
-                telegram_id=row[5],
-                phone_number=row[6],
-                is_admin=bool(row[7])
-            )
+            return self.get_user_from_row(row)
 
     def get_admins(self) -> iter:
         """Get administrators list from storage
@@ -143,24 +138,14 @@ class PostgresUserAdapter(UserDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, is_admin"""
-                f" FROM {self.__table_name} WHERE is_admin")
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE is_admin")
 
             self.__connection.commit()
 
             for row in cursor:
-                yield User(
-                    user_id=row[0],
-                    firstname=row[1],
-                    lastname=row[2],
-                    middlename=row[3],
-                    displayname=row[4],
-                    telegram_id=row[5],
-                    phone_number=row[6],
-                    is_admin=bool(row[7])
-                )
+                yield self.get_user_from_row(row)
 
     def append_data(self, user: User) -> User:
         """Append new data to storage

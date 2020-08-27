@@ -1,3 +1,4 @@
+import psycopg2
 from datetime import datetime
 from typing import Union
 from ..data import ReserveDataAdapter
@@ -12,15 +13,32 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         connection:
             A PostgreSQL connection instance.
     """
+    columns = (
+        "id", "firstname", "lastname", "middlename", "displayname",
+        "telegram_id", "phone_number", "start_time", "end_time",
+        "set_type_id", "set_count", "board", "hydro",
+        "canceled", "cancel_telegram_id")
 
-    def __init__(self, connection, table_name="wake_reserves"):
+    def __init__(self,
+                 connection=None, database_url=None,
+                 table_name="wake_reserves"):
         self.__connection = connection
+        self.__database_url = database_url
         self.__table_name = table_name
+
+        self.connect()
         self.create_table()
 
     @property
     def connection(self):
         return self.__connection
+
+    def connect(self):
+        try:
+            with self.__connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Exception:
+            self.__connection = psycopg2.connect(self.__database_url)
 
     def create_table(self):
 
@@ -45,6 +63,24 @@ class PostgressWakeAdapter(ReserveDataAdapter):
 
         self.__connection.commit()
 
+    def get_wake_from_row(self, row):
+        wake_id = row[self.columns.index("id")]
+        user = User(row[self.columns.index("firstname")])
+        user.lastname = row[self.columns.index("lastname")]
+        user.middlename = row[self.columns.index("middlename")]
+        user.displayname = row[self.columns.index("displayname")]
+        user.telegram_id = row[self.columns.index("telegram_id")]
+        start = row[self.columns.index("start_time")]
+        set_type_id = row[self.columns.index("set_type_id")]
+        set_count = row[self.columns.index("set_count")]
+        board = row[self.columns.index("board")]
+        hydro = row[self.columns.index("hydro")]
+
+        return Wake(id=wake_id, user=user,
+                    start_date=start.date(), start_time=start.time(),
+                    set_type_id=set_type_id, set_count=set_count,
+                    board=board, hydro=hydro)
+
     def get_data(self) -> iter:
         """Get a full set of data from storage
 
@@ -52,30 +88,13 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, board, hydro,
-                    canceled, cancel_telegram_id"""
-                f" FROM {self.__table_name}")
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}")
 
             self.__connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                start = row[6]
-
-                yield Wake(
-                    id=row[0], user=user,
-                    start_date=start.date(), start_time=start.time(),
-                    set_type_id=row[7], set_count=row[8],
-                    board=row[9], hydro=row[10],
-                    canceled=row[11], cancel_telegram_id=row[12])
+                yield self.get_wake_from_row(row)
 
     def get_active_reserves(self) -> iter:
         """Get an active wakeboard reservations from storage
@@ -84,29 +103,15 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, start_time, set_type_id, set_count,
-                        board, hydro"""
-                f"  FROM {self.__table_name}"
-                """ WHERE NOT canceled AND start_time >= %s
-                    ORDER BY start_time""", [datetime.today()])
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE NOT canceled AND start_time >= %s"
+                           " ORDER BY start_time", [datetime.today()])
 
             self.__connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                start = row[6]
-
-                yield Wake(
-                    id=row[0], user=user,
-                    start_date=start.date(), start_time=start.time(),
-                    set_type_id=row[7], set_count=row[8],
-                    board=row[9], hydro=row[10])
+                yield self.get_wake_from_row(row)
 
     def get_data_by_keys(self, id: int) -> Union[Wake, None]:
         """Get a set of data from storage by a keys
@@ -119,32 +124,19 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, start_time, set_type_id,
-                        set_count, board, hydro"""
-                f"  FROM {self.__table_name} WHERE id = %s", [id])
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE id = %s", [id])
 
             rows = list(cursor)
             if len(rows) == 0:
                 return None
 
             row = rows[0]
-            user = User(row[1])
-            user.lastname = row[2]
-            user.middlename = row[3]
-            user.displayname = row[4]
-            user.telegram_id = row[5]
-            user.phone_number = row[6]
-            start = row[7]
 
             self.__connection.commit()
 
-            return Wake(
-                id=row[0], user=user,
-                start_date=start.date(), start_time=start.time(),
-                set_type_id=row[8], set_count=row[9],
-                board=row[10], hydro=row[11])
+            return self.get_wake_from_row(row)
 
     def get_concurrent_reserves(self, reserve: Wake) -> iter:
         """Get an concurrent reservations from storage
@@ -156,36 +148,19 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         end_ts = reserve.end
 
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, start_time, end_time,
-                        set_type_id, set_count, board, hydro, count"""
-                f"  FROM {self.__table_name}"
-                """ WHERE NOT canceled
-                        and ((%s = start_time)
-                        or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time))
-                    ORDER BY start_time""",
-                (start_ts, start_ts, end_ts, start_ts, start_ts))
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE NOT canceled"
+                           "       and ((%s = start_time)"
+                           "       or (%s < start_time and %s > start_time)"
+                           "       or (%s > start_time and %s < end_time))"
+                           " ORDER BY start_time",
+                           (start_ts, start_ts, end_ts, start_ts, start_ts))
 
             self.__connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                user.phone_number = row[6]
-                start = row[7]
-                start_date = start.date() if start else None
-                start_time = start.time() if start else None
-
-                yield Wake(
-                    id=row[0], user=user,
-                    start_date=start_date, start_time=start_time,
-                    set_type_id=row[9], set_count=row[10],
-                    board=row[11], hydro=row[12])
+                yield self.get_wake_from_row(row)
 
     def get_concurrent_count(self, reserve: Wake) -> int:
         """Get an concurrent reservations count from storage

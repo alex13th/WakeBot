@@ -1,3 +1,4 @@
+import psycopg2
 from datetime import datetime
 from typing import Union
 from ..data import ReserveDataAdapter
@@ -11,15 +12,31 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
         connection:
             A PostgreSQL connection instance.
     """
+    columns = (
+        "id", "firstname", "lastname", "middlename", "displayname",
+        "telegram_id", "phone_number", "start_time", "end_time",
+        "set_type_id", "set_count", "count")
 
-    def __init__(self, connection, table_name="sup_reserves"):
+    def __init__(self,
+                 connection=None, database_url=None,
+                 table_name="sup_reserves"):
         self.__connection = connection
+        self.__database_url = database_url
         self.__table_name = table_name
+
+        self.connect()
         self.create_table()
 
     @property
     def connection(self):
         return self.__connection
+
+    def connect(self):
+        try:
+            with self.__connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Exception:
+            self.__connection = psycopg2.connect(self.__database_url)
 
     def create_table(self):
 
@@ -44,6 +61,23 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
 
         self.__connection.commit()
 
+    def get_supboard_from_row(self, row):
+        supboard_id = row[self.columns.index("id")]
+        user = User(row[self.columns.index("firstname")])
+        user.lastname = row[self.columns.index("lastname")]
+        user.middlename = row[self.columns.index("middlename")]
+        user.displayname = row[self.columns.index("displayname")]
+        user.telegram_id = row[self.columns.index("telegram_id")]
+        start = row[self.columns.index("start_time")]
+        set_type_id = row[self.columns.index("set_type_id")]
+        set_count = row[self.columns.index("set_count")]
+        count = row[self.columns.index("count")]
+
+        return Supboard(id=supboard_id, user=user,
+                        start_date=start.date(), start_time=start.time(),
+                        set_type_id=set_type_id, set_count=set_count,
+                        count=count)
+
     def get_data(self) -> iter:
         """Get a full set of data from storage
 
@@ -51,28 +85,13 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, count """
-                f" FROM {self.__table_name}")
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}")
 
             self.__connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                start = row[6]
-
-                yield Supboard(
-                    id=row[0], user=user,
-                    start_date=start.date(), start_time=start.time(),
-                    set_type_id=row[7], set_count=row[8],
-                    count=row[9])
+                yield self.get_supboard_from_row(row)
 
     def get_active_reserves(self) -> iter:
         """Get an active supboard reservations from storage
@@ -81,30 +100,15 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, start_time, set_type_id,
-                        set_count, count"""
-                f"  FROM {self.__table_name}"
-                """ WHERE NOT canceled
-                        and start_time >= %s
-                    ORDER BY start_time""", [datetime.today()])
+            columns_str = ", ".join(self.columns)
+            cursor.execute((f"SELECT {columns_str} FROM {self.__table_name}"
+                            " WHERE NOT canceled and start_time >= %s"
+                            " ORDER BY start_time"), [datetime.today()])
 
             self.__connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                start = row[6]
-
-                yield Supboard(
-                    id=row[0], user=user,
-                    start_date=start.date(), start_time=start.time(),
-                    set_type_id=row[7], set_count=row[8],
-                    count=row[9])
+                yield self.get_supboard_from_row(row)
 
     def get_data_by_keys(self, id: int) -> Union[Supboard, None]:
         """Get a set of data from storage by a keys
@@ -117,12 +121,9 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, start_time, set_type_id,
-                        set_count, count, canceled, cancel_telegram_id
-                        """
-                f"  FROM {self.__table_name} WHERE id = %s", [id])
+            columns_str = ", ".join(self.columns)
+            cursor.execute((f"SELECT {columns_str} FROM {self.__table_name}"
+                            " WHERE id = %s"), [id])
 
             self.__connection.commit()
 
@@ -131,19 +132,7 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                 return None
 
             row = rows[0]
-            user = User(row[1])
-            user.lastname = row[2]
-            user.middlename = row[3]
-            user.displayname = row[4]
-            user.telegram_id = row[5]
-            user.phone_number = row[6]
-            start = row[7]
-
-            return Supboard(
-                id=row[0], user=user,
-                start_date=start.date(), start_time=start.time(),
-                set_type_id=row[8], set_count=row[9],
-                count=row[10], canceled=row[11], cancel_telegram_id=row[12])
+            return self.get_supboard_from_row(row)
 
     def get_concurrent_reserves(self, reserve: Supboard) -> iter:
         """Get an concurrent reservations from storage
@@ -155,36 +144,19 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
         end_ts = reserve.end
 
         with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, start_time,
-                        set_type_id, set_count, count"""
-                f"  FROM {self.__table_name}"
-                """ WHERE NOT canceled
-                        and ((%s = start_time)
-                        or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time))
-                    ORDER BY start_time""",
-                (start_ts, start_ts, end_ts, start_ts, start_ts))
+            columns_str = ", ".join(self.columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+                           " WHERE NOT canceled"
+                           "       and ((%s = start_time)"
+                           "       or (%s < start_time and %s > start_time)"
+                           "       or (%s > start_time and %s < end_time))"
+                           " ORDER BY start_time",
+                           (start_ts, start_ts, end_ts, start_ts, start_ts))
 
             self.__connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                user.phone_number = row[6]
-                start = row[7]
-                start_date = start.date() if start else None
-                start_time = start.time() if start else None
-
-                yield Supboard(
-                    id=row[0], user=user,
-                    start_date=start_date, start_time=start_time,
-                    set_type_id=row[8], set_count=row[9],
-                    count=row[10])
+                yield self.get_supboard_from_row(row)
 
     def get_concurrent_count(self, reserve: Supboard) -> int:
         """Get an concurrent reservations count from storage
@@ -222,19 +194,16 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                 An instance of entity Supboard class.
         """
         with self.__connection.cursor() as cursor:
+            columns_str = ", ".join(self.columns[1:])
             cursor.execute(
-                f"  INSERT INTO {self.__table_name} ("
-                """     telegram_id, firstname, lastname, middlename,
-                        displayname, phone_number, start_time, end_time,
-                        set_type_id, set_count, count)
-                    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    RETURNING id
-                """, (
-                    reserve.user.telegram_id,
+                f"  INSERT INTO {self.__table_name} ({columns_str})"
+                "    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                "    RETURNING id", (
                     reserve.user.firstname,
                     reserve.user.lastname,
                     reserve.user.middlename,
                     reserve.user.displayname,
+                    reserve.user.telegram_id,
                     reserve.user.phone_number,
                     reserve.start,
                     reserve.end,
