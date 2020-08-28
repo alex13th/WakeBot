@@ -3,6 +3,7 @@ from .default import DefaultProcessor
 from .reserve import ReserveProcessor
 from .wake import WakeProcessor
 from .supboard import SupboardProcessor
+from .bathhouse import BathhouseProcessor
 
 parse_mode = ParseMode.MARKDOWN
 
@@ -53,7 +54,6 @@ class RuReserve(RuGeneral):
     start_book_button = f"Начать {book_text.lower()}"
     start_book_button_callback = book_text
 
-    # phone_regex = "\\+\\d{10}"
     phone_regex = "^\\+[7]\\s?[-\\(]?\\d{3}\\)?[- ]?\\d{3}-?\\d{2}-?\\d{2}$"
     icon_phone = "📞"
     phone_text = "Телефон"
@@ -178,5 +178,16 @@ class RuSupboard(RuReserve):
     service_type_text = "Сапборд"
 
 
+class RuBathhouse(RuReserve):
+    hello_message = ""
+    service_type_text = "Банька"
+    unit_name = "чел."
+    booking_text = ""
+    hour_notes = ""
+    minute_notes = ""
+    time_button_change = "Изменить время"
+
+
 if __name__ == "__main__":
     DefaultProcessor, ReserveProcessor, WakeProcessor, SupboardProcessor
+    BathhouseProcessor
