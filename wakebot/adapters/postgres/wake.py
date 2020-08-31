@@ -70,6 +70,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         user.middlename = row[self.columns.index("middlename")]
         user.displayname = row[self.columns.index("displayname")]
         user.telegram_id = row[self.columns.index("telegram_id")]
+        user.phone_number = row[self.columns.index("phone_number")]
         start = row[self.columns.index("start_time")]
         set_type_id = row[self.columns.index("set_type_id")]
         set_count = row[self.columns.index("set_count")]
