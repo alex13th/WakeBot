@@ -1,3 +1,5 @@
+import re
+
 from typing import Optional
 
 
@@ -28,10 +30,11 @@ class User:
     lastname: Optional[str]
     middlename: Optional[str]
     _displayname: Optional[str]
-    phone_number: Optional[str]
+    _phone_number: Optional[str]
     telegram_id: Optional[int]
     user_id: Optional[int]
     is_admin: Optional[bool]
+    phone_regex = "^\\+[7]\\s?[-\\(]?\\d{3}\\)?[- ]?\\d{3}-?\\d{2}-?\\d{2}$"
 
     def __init__(self,
                  firstname: str,
@@ -84,8 +87,19 @@ class User:
         return result.strip()
 
     @displayname.setter
-    def displayname(self, value: Optional[str]):
+    def displayname(self, value: str):
         self._displayname = value
+
+    @property
+    def phone_number(self):
+        return self._phone_number
+
+    @phone_number.setter
+    def phone_number(self, value: Optional[str]):
+        if (not value) or re.match(self.phone_regex, value):
+            self._phone_number = value
+        else:
+            raise ValueError
 
     def __copy__(self):
         return User(
@@ -99,3 +113,15 @@ class User:
     def __str__(self) -> str:
         """Provide built-in mapping to string"""
         return self.displayname
+
+    def __eq__(self, other) -> bool:
+        """ Compare all attributes exclude user_id """
+        if (self.firstname == other.firstname
+           and self.lastname == other.lastname
+           and self.middlename == other.middlename
+           and self.displayname == other.displayname
+           and self.phone_number == other.phone_number
+           and self.telegram_id == other.telegram_id):
+            return True
+        else:
+            return False

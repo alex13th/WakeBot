@@ -1,5 +1,6 @@
-from typing import Optional, Union
 from datetime import datetime, timedelta, date, time
+from typing import Optional, Union
+
 from .user import User
 
 
@@ -48,7 +49,7 @@ class Reserve:
     user: Optional[User]
     start_date: Optional[date]
     start_time: Optional[time]
-    set_type: Union[str, int, None]
+    set_type: Union[ReserveSetType, None]
     set_count: int
     count: int
     canceled: bool
@@ -102,10 +103,10 @@ class Reserve:
 
     @property
     def is_complete(self) -> bool:
-        return (self.__start_date
-                and self.__start_time
-                and self.minutes
-                and self.user and self.user.phone_number)
+        return bool(self.__start_date
+                    and self.__start_time
+                    and self.minutes
+                    and self.user and self.user.phone_number)
 
     @property
     def user(self) -> Optional[User]:
@@ -150,7 +151,7 @@ class Reserve:
     @property
     def end(self) -> Optional[datetime]:
         result = None
-        if self.is_complete:
+        if self.__start_date and self.__start_time and self.minutes:
             result = datetime.combine(self.__start_date, self.__start_time)
             result += timedelta(minutes=self.minutes)
 
@@ -159,7 +160,7 @@ class Reserve:
     @property
     def end_date(self) -> Optional[date]:
         result = None
-        if self.is_complete:
+        if self.__start_date and self.__start_time and self.minutes:
             result = datetime.combine(self.__start_date, self.__start_time)
             result += timedelta(minutes=self.minutes)
             result = result.date()

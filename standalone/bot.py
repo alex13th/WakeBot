@@ -14,7 +14,7 @@ from wakebot.adapters.postgres import PostgressWakeAdapter
 from wakebot.adapters.postgres import PostgressSupboardAdapter
 from wakebot.adapters.postgres import PostgresUserAdapter
 
-from config import DefaultStrings, WakeStrings, SupboardStrings
+from standalone.config import DefaultStrings, WakeStrings, SupboardStrings
 
 TOKEN = os.environ["TOKEN"]
 DATABASE_URL = os.environ["DATABASE_URL"]
