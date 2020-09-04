@@ -179,7 +179,8 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
                                              reply_markup)
         assert passed, message
 
-        passed, message = self.assert_params(state_data["state_type"], "sup")
+        passed, message = self.assert_params(state_data["state_type"],
+                                             "bathhouse")
         assert passed, message
 
         passed, message = self.assert_params(state_data["state"], "main")
@@ -191,9 +192,10 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
         callback.data = "book"
         reply_markup = self.create_book_keyboard()
         state_key = "101-111-121"
-        self.append_state(state_key, "sup", "main")
+        self.append_state(state_key, "bathhouse", "main")
 
-        checked = self.processor.check_filter(callback.message, "sup", "main")
+        checked = self.processor.check_filter(callback.message, "bathhouse",
+                                              "main")
         passed, message = self.assert_params(checked, True)
         assert passed, message
 
@@ -211,17 +213,35 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
         callback.data = "list"
         reply_markup = self.create_list_keyboard(True)
         state_key = "101-111-121"
-        self.append_state(state_key, "sup", "main")
+        self.append_state(state_key, "bathhouse", "main")
 
         checked = self.processor.check_filter(
-            callback.message, "sup", "main")
+            callback.message, "bathhouse", "main")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
         await self.processor.callback_main(callback)
 
         self.check_state(state_key, self.create_list_text(),
-                         reply_markup, "sup", "list")
+                         reply_markup, "bathhouse", "list")
+
+    async def test_callback_book_back(self):
+        """Proceed press Back button in Book menu"""
+        callback = self.test_callback_query
+        callback.data = "back"
+        reply_markup = self.create_main_keyboard()
+        state_key = "101-111-121"
+        self.append_state(state_key, "bathhouse", "book")
+
+        checked = self.processor.check_filter(
+            callback.message, "bathhouse", "book")
+        passed, alert = self.assert_params(checked, True)
+        assert passed, alert
+
+        await self.processor.callback_book(callback)
+
+        self.check_state(state_key, self.create_list_text(),
+                         reply_markup, "bathhouse", "main")
 
     async def test_callback_book_date(self):
         """Proceed press Date button in Book menu"""
@@ -229,16 +249,17 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
         callback.data = "date"
         reply_markup = self.create_date_keyboard()
         state_key = "101-111-121"
-        self.append_state(state_key, "sup", "book")
+        self.append_state(state_key, "bathhouse", "book")
 
-        checked = self.processor.check_filter(callback.message, "sup", "book")
+        checked = self.processor.check_filter(callback.message, "bathhouse",
+                                                                "book")
         passed, message = self.assert_params(checked, True)
         assert passed, message
 
         await self.processor.callback_book(callback)
 
-        self.check_state(state_key, self.create_book_text(),
-                         reply_markup, "sup", "date")
+        self.check_state(state_key, self.create_list_text(),
+                         reply_markup, "bathhouse", "date")
 
     async def test_callback_book_apply(self):
         """Proceed Apply button in Book menu"""
@@ -246,10 +267,10 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
         callback = self.test_callback_query
         callback.data = "apply"
         state_key = "101-111-121"
-        self.append_state(state_key, "sup", "book")
+        self.append_state(state_key, "bathhouse", "book")
 
         checked = self.processor.check_filter(
-            callback.message, "sup", "book")
+            callback.message, "bathhouse", "book")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
 
@@ -276,10 +297,10 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
 
         callback.data = "cancel-4"
         state_key = "101-111-121"
-        self.append_state(state_key, "sup", "details")
+        self.append_state(state_key, "bathhouse", "details")
 
         checked = self.processor.check_filter(
-            callback.message, "sup", "details")
+            callback.message, "bathhouse", "details")
         passed, alert = self.assert_params(checked, True)
         assert passed, alert
         reserve = self.bathhouse_adapter.get_data_by_keys(4)
@@ -295,7 +316,7 @@ class BathhouseProcessorTestCase(ReserveProcessorTestCase):
         text = self.create_list_text()
         reply_markup = self.create_list_keyboard(True)
         self.check_state(state_key, text,
-                         reply_markup, "sup", "list")
+                         reply_markup, "bathhouse", "list")
 
 
 if __name__ == "__main__":

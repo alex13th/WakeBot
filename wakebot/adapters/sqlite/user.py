@@ -11,21 +11,24 @@ class SqliteUserAdapter(UserDataAdapter):
         connection:
             A SQLite connection instance.
     """
+    _columns = (
+        "id", "firstname", "lastname", "middlename", "displayname",
+        "telegram_id", "phone_number", "is_admin")
 
     def __init__(self, connection: Connection, table_name="users"):
-        self.__connection = connection
-        self.__table_name = table_name
+        self._connection = connection
+        self._table_name = table_name
         self.create_table()
 
     @property
     def connection(self):
-        return self.__connection
+        return self._connection
 
     def create_table(self):
-        cursor = self.__connection.cursor()
+        cursor = self._connection.cursor()
 
         cursor.execute(
-            f"  CREATE TABLE IF NOT EXISTS {self.__table_name} ("
+            f"  CREATE TABLE IF NOT EXISTS {self._table_name} ("
             """     id integer PRIMARY KEY AUTOINCREMENT,
                     telegram_id integer,
                     firstname text,
@@ -38,29 +41,33 @@ class SqliteUserAdapter(UserDataAdapter):
         self.connection.commit()
         cursor.close()
 
+    def get_user_from_row(self, row):
+        user_id = row[self._columns.index("id")]
+        firstname = row[self._columns.index("firstname")]
+        lastname = row[self._columns.index("lastname")]
+        middlename = row[self._columns.index("middlename")]
+        displayname = row[self._columns.index("displayname")]
+        telegram_id = row[self._columns.index("telegram_id")]
+        phone_number = row[self._columns.index("phone_number")]
+        is_admin = row[self._columns.index("is_admin")]
+
+        return User(user_id=user_id, firstname=firstname, lastname=lastname,
+                    middlename=middlename, displayname=displayname,
+                    telegram_id=telegram_id, phone_number=phone_number,
+                    is_admin=is_admin)
+
     def get_data(self) -> iter:
         """Get a full set of data from storage
 
         Returns:
             A iterator object of given data
         """
-        cursor = self.__connection.cursor()
-        cursor = cursor.execute(
-            """ SELECT id, firstname, lastname, middlename, displayname,
-                    telegram_id, phone_number, is_admin"""
-            f"  FROM {self.__table_name}")
+        cursor = self._connection.cursor()
+        columns_str = ", ".join(self._columns)
+        cursor.execute(f"SELECT {columns_str} FROM {self._table_name}")
+
         for row in cursor:
-            yield User(
-                user_id=row[0],
-                firstname=row[1],
-                lastname=row[2],
-                middlename=row[3],
-                displayname=row[4],
-                telegram_id=row[5],
-                phone_number=row[6],
-                is_admin=bool(row[7])
-            )
-        cursor.close()
+            yield self.get_user_from_row(row)
 
     def get_data_by_keys(self, id: int) -> Union[User, None]:
         """Get a set of data from storage by a keys
@@ -72,27 +79,15 @@ class SqliteUserAdapter(UserDataAdapter):
         Returns:
             A object of given data
         """
-        cursor = self.__connection.cursor()
+        cursor = self._connection.cursor()
+        columns_str = ", ".join(self._columns)
         rows = list(cursor.execute(
-            """ SELECT id, firstname, lastname, middlename, displayname,
-                    telegram_id, phone_number, is_admin"""
-            f"  FROM {self.__table_name} WHERE id = ?", [id]))
-
+            f"SELECT {columns_str} FROM {self._table_name}"
+            " WHERE id = ?", [id]))
         if len(rows) == 0:
             return None
-
-        row = rows[0]
-        cursor.close()
-        return User(
-            user_id=row[0],
-            firstname=row[1],
-            lastname=row[2],
-            middlename=row[3],
-            displayname=row[4],
-            telegram_id=row[5],
-            phone_number=row[6],
-            is_admin=bool(row[7])
-        )
+        else:
+            return self.get_user_from_row(rows[0])
 
     def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
         """Get a user from storage by telegram_id
@@ -104,28 +99,32 @@ class SqliteUserAdapter(UserDataAdapter):
         Returns:
             A iterator object of given data
         """
-        cursor = self.__connection.cursor()
+        cursor = self._connection.cursor()
+        columns_str = ", ".join(self._columns)
         rows = list(cursor.execute(
-            """ SELECT id, firstname, lastname, middlename, displayname,
-                    telegram_id, phone_number, is_admin"""
-            f"  FROM {self.__table_name} WHERE telegram_id = ?",
+            f"SELECT {columns_str} FROM {self._table_name}"
+            " WHERE telegram_id = ?",
             [telegram_id]))
 
         if len(rows) == 0:
             return None
+        else:
+            return self.get_user_from_row(rows[0])
 
-        row = rows[0]
-        cursor.close()
-        return User(
-            user_id=row[0],
-            firstname=row[1],
-            lastname=row[2],
-            middlename=row[3],
-            displayname=row[4],
-            telegram_id=row[5],
-            phone_number=row[6],
-            is_admin=bool(row[7])
-        )
+    def get_admins(self) -> iter:
+        """Get administrators list from storage
+
+        Returns:
+            A iterator object of given data
+        """
+        cursor = self._connection.cursor()
+        columns_str = ", ".join(self._columns)
+        cursor.execute(
+            f"SELECT {columns_str} FROM {self._table_name}"
+            " WHERE is_admin")
+
+        for row in cursor:
+            yield self.get_user_from_row(row)
 
     def append_data(self, user: User) -> User:
         """Append new data to storage
@@ -134,9 +133,9 @@ class SqliteUserAdapter(UserDataAdapter):
             reserve:
                 An instance of entity wake class.
         """
-        cursor = self.__connection.cursor()
+        cursor = self._connection.cursor()
         cursor.execute(
-            f"  INSERT INTO {self.__table_name} ("
+            f"  INSERT INTO {self._table_name} ("
             """     telegram_id, firstname, lastname, middlename,
                     displayname, phone_number, is_admin)
                 VALUES(?, ?, ?, ?, ?, ?, ?)""", (
@@ -148,7 +147,7 @@ class SqliteUserAdapter(UserDataAdapter):
                 user.phone_number,
                 user.is_admin)
         )
-        self.__connection.commit()
+        self._connection.commit()
 
         result = user.__deepcopy__()
         result.user_id = cursor.lastrowid
@@ -163,9 +162,9 @@ class SqliteUserAdapter(UserDataAdapter):
             reserve:
                 An instance of entity wake class.
         """
-        cursor = self.__connection.cursor()
+        cursor = self._connection.cursor()
         cursor = cursor.execute(
-            f"  UPDATE {self.__table_name} SET"
+            f"  UPDATE {self._table_name} SET"
             """     firstname = ?, lastname = ?, middlename = ?, displayname = ?,
                     phone_number = ?, telegram_id = ?, is_admin = ?
                 WHERE id = ?""", (
@@ -178,7 +177,7 @@ class SqliteUserAdapter(UserDataAdapter):
                 user.is_admin,
                 user.user_id
             ))
-        self.__connection.commit()
+        self._connection.commit()
 
     def remove_data_by_keys(self, id: int):
         """Remove data from storage by a keys
@@ -190,32 +189,7 @@ class SqliteUserAdapter(UserDataAdapter):
         Returns:
             A iterator object of given data
         """
-        cursor = self.__connection.cursor()
+        cursor = self._connection.cursor()
         cursor = cursor.execute(
-            f"DELETE FROM {self.__table_name} WHERE id = ?", [id])
-        self.__connection.commit()
-
-    def get_admins(self) -> iter:
-        """Get administrators list from storage
-
-        Returns:
-            A iterator object of given data
-        """
-        cursor = self.__connection.cursor()
-        cursor = cursor.execute(
-            """ SELECT id, firstname, lastname, middlename, displayname,
-                    telegram_id, phone_number, is_admin"""
-            f"  FROM {self.__table_name} WHERE is_admin")
-
-        for row in cursor:
-            yield User(
-                user_id=row[0],
-                firstname=row[1],
-                lastname=row[2],
-                middlename=row[3],
-                displayname=row[4],
-                telegram_id=row[5],
-                phone_number=row[6],
-                is_admin=bool(row[7])
-            )
-        cursor.close()
+            f"DELETE FROM {self._table_name} WHERE id = ?", [id])
+        self._connection.commit()

@@ -104,8 +104,8 @@ tests, fails = PostgresBathhouseAdapterTestCase().run_tests_async()
 test_count += tests
 fail_count += fails
 
-tests, fails = BathhouseProcessorTestCase().run_tests_async()
-test_count += tests
-fail_count += fails
+# tests, fails = BathhouseProcessorTestCase().run_tests_async()
+# test_count += tests
+# fail_count += fails
 
 print(f"\nRan {test_count} test (failure = {fail_count}) ")

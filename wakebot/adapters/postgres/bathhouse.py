@@ -12,36 +12,37 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
         connection:
             A PostgreSQL connection instance.
     """
-    __connection = None
+    _columns = (
+        "id", "firstname", "lastname", "middlename", "displayname",
+        "telegram_id", "phone_number", "start_time", "end_time",
+        "set_type_id", "set_count", "count", "canceled")
 
-    def __init__(self, connection=None,
-                 db_url: Union[str, None] = None,
+    def __init__(self,
+                 connection=None, database_url=None,
                  table_name="bathhouse_reserves"):
-        if connection:
-            self.__connection = connection
-        else:
-            self.__db_url = db_url
-            self.connect()
+        self._connection = connection
+        self.__database_url = database_url
+        self._table_name = table_name
 
-        self.__table_name = table_name
+        self.connect()
         self.create_table()
 
     @property
     def connection(self):
-        return self.__connection
+        return self._connection
 
     def connect(self):
         try:
-            with self.__connection.cursor() as cursor:
+            with self._connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception:
-            self.__connection = psycopg2.connect(self.__db_url)
+            self._connection = psycopg2.connect(self.__db_url)
 
     def create_table(self):
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"CREATE TABLE IF NOT EXISTS {self.__table_name}"
+                f"CREATE TABLE IF NOT EXISTS {self._table_name}"
                 """ (
                     id SERIAL PRIMARY KEY,
                     telegram_id integer,
@@ -58,7 +59,26 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
                     canceled boolean DEFAULT false,
                     cancel_telegram_id integer)""")
 
-        self.__connection.commit()
+        self._connection.commit()
+
+    def get_bathhouse_from_row(self, row):
+        bathhouse_id = row[self._columns.index("id")]
+        user = User(row[self._columns.index("firstname")])
+        user.lastname = row[self._columns.index("lastname")]
+        user.middlename = row[self._columns.index("middlename")]
+        user.displayname = row[self._columns.index("displayname")]
+        user.telegram_id = row[self._columns.index("telegram_id")]
+        user.phone_number = row[self._columns.index("phone_number")]
+        start = row[self._columns.index("start_time")]
+        set_type_id = row[self._columns.index("set_type_id")]
+        set_count = row[self._columns.index("set_count")]
+        count = row[self._columns.index("count")]
+        canceled = row[self._columns.index("canceled")]
+
+        return Bathhouse(id=bathhouse_id, user=user,
+                         start_date=start.date(), start_time=start.time(),
+                         set_type_id=set_type_id, set_count=set_count,
+                         count=count, canceled=canceled)
 
     def get_data(self) -> iter:
         """Get a full set of data from storage
@@ -67,29 +87,14 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         self.connect()
-        with self.__connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT
-                    id, firstname, lastname,
-                    middlename, displayname, telegram_id, start_time,
-                    set_type_id, set_count, count """
-                f" FROM {self.__table_name}")
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}")
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                start = row[6]
-
-                yield Bathhouse(
-                    id=row[0], user=user,
-                    start_date=start.date(), start_time=start.time(),
-                    set_type_id=row[7], set_count=row[8],
-                    count=row[9])
+                yield self.get_bathhouse_from_row(row)
 
     def get_active_reserves(self) -> iter:
         """Get an active Bathhouse reservations from storage
@@ -98,31 +103,18 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
             cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, start_time, set_type_id,
-                        set_count, count"""
-                f"  FROM {self.__table_name}"
-                """ WHERE NOT canceled
-                        and start_time >= %s
-                    ORDER BY start_time""", [datetime.today()])
+                f"SELECT {columns_str} FROM {self._table_name}"
+                " WHERE NOT canceled"
+                "       and start_time >= %s"
+                " ORDER BY start_time", [datetime.today()])
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                start = row[6]
-
-                yield Bathhouse(
-                    id=row[0], user=user,
-                    start_date=start.date(), start_time=start.time(),
-                    set_type_id=row[7], set_count=row[8],
-                    count=row[9])
+                yield self.get_bathhouse_from_row(row)
 
     def get_data_by_keys(self, id: int) -> Union[Bathhouse, None]:
         """Get a set of data from storage by a keys
@@ -135,34 +127,19 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
             cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, start_time, set_type_id,
-                        set_count, count, canceled, cancel_telegram_id
-                        """
-                f"  FROM {self.__table_name} WHERE id = %s", [id])
+                f"SELECT {columns_str} FROM {self._table_name}"
+                " WHERE id = %s", [id])
 
-            self.__connection.commit()
+            self._connection.commit()
 
             rows = list(cursor)
             if len(rows) == 0:
                 return None
 
-            row = rows[0]
-            user = User(row[1])
-            user.lastname = row[2]
-            user.middlename = row[3]
-            user.displayname = row[4]
-            user.telegram_id = row[5]
-            user.phone_number = row[6]
-            start = row[7]
-
-            return Bathhouse(
-                id=row[0], user=user,
-                start_date=start.date(), start_time=start.time(),
-                set_type_id=row[8], set_count=row[9],
-                count=row[10], canceled=row[11], cancel_telegram_id=row[12])
+            return self.get_bathhouse_from_row(rows[0])
 
     def get_concurrent_reserves(self, reserve: Bathhouse) -> iter:
         """Get an concurrent reservations from storage
@@ -174,37 +151,21 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
         end_ts = reserve.end
 
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
             cursor.execute(
-                """ SELECT id, firstname, lastname, middlename, displayname,
-                        telegram_id, phone_number, start_time,
-                        set_type_id, set_count, count"""
-                f"  FROM {self.__table_name}"
-                """ WHERE NOT canceled
-                        and ((%s = start_time)
-                        or (%s < start_time and %s > start_time)
-                        or (%s > start_time and %s < end_time))
-                    ORDER BY start_time""",
+                f"SELECT {columns_str} FROM {self._table_name}"
+                " WHERE NOT canceled"
+                "       and ((%s = start_time)"
+                "       or (%s < start_time and %s > start_time)"
+                "       or (%s > start_time and %s < end_time))"
+                " ORDER BY start_time",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
-                user = User(row[1])
-                user.lastname = row[2]
-                user.middlename = row[3]
-                user.displayname = row[4]
-                user.telegram_id = row[5]
-                user.phone_number = row[6]
-                start = row[7]
-                start_date = start.date() if start else None
-                start_time = start.time() if start else None
-
-                yield Bathhouse(
-                    id=row[0], user=user,
-                    start_date=start_date, start_time=start_time,
-                    set_type_id=row[8], set_count=row[9],
-                    count=row[10])
+                yield self.get_bathhouse_from_row(row)
 
     def get_concurrent_count(self, reserve: Bathhouse) -> int:
         """Get an concurrent reservations count from storage
@@ -216,17 +177,17 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
         end_ts = reserve.end
 
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
                 "   SELECT SUM(count) AS concurrent_count"
-                f"  FROM {self.__table_name}"
+                f"  FROM {self._table_name}"
                 """ WHERE NOT canceled
                         and ((%s = start_time)
                         or (%s < start_time and %s > start_time)
                         or (%s > start_time and %s < end_time))""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
-            self.__connection.commit()
+            self._connection.commit()
 
             if cursor:
                 row = list(cursor)
@@ -243,9 +204,9 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
                 An instance of entity Bathhouse class.
         """
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"  INSERT INTO {self.__table_name} ("
+                f"  INSERT INTO {self._table_name} ("
                 """     telegram_id, firstname, lastname, middlename,
                         displayname, phone_number, start_time, end_time,
                         set_type_id, set_count, count)
@@ -268,7 +229,7 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
             result = reserve.__deepcopy__()
             result.id = cursor.fetchone()[0]
 
-            self.__connection.commit()
+            self._connection.commit()
 
             return result
 
@@ -280,9 +241,9 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
                 An instance of entity Bathhouse class.
         """
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"  UPDATE {self.__table_name} SET"
+                f"  UPDATE {self._table_name} SET"
                 """     firstname = %s, lastname = %s, middlename = %s,
                         displayname = %s, phone_number = %s, telegram_id = %s,
                         start_time = %s, end_time = %s, set_type_id = %s,
@@ -304,7 +265,7 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
                     reserve.cancel_telegram_id,
                     reserve.id))
 
-            self.__connection.commit()
+            self._connection.commit()
 
     def remove_data_by_keys(self, id: int):
         """Remove data from storage by a keys
@@ -317,7 +278,7 @@ class PostgressBathhouseAdapter(ReserveDataAdapter):
             A iterator object of given data
         """
         self.connect()
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
-            self.__connection.commit()
+                f"DELETE FROM {self._table_name} WHERE id = %s", [id])
+            self._connection.commit()

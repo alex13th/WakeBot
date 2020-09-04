@@ -11,35 +11,35 @@ class PostgresUserAdapter(UserDataAdapter):
         connection:
             A SQLite connection instance.
     """
-    columns = (
+    _columns = (
         "id", "firstname", "lastname", "middlename", "displayname",
         "telegram_id", "phone_number", "is_admin")
 
     def __init__(self,
                  connection=None, database_url=None,
                  table_name="users"):
-        self.__connection = connection
+        self._connection = connection
         self.__database_url = database_url
-        self.__table_name = table_name
+        self._table_name = table_name
 
         self.connect()
         self.create_table()
 
     @property
     def connection(self):
-        return self.__connection
+        return self._connection
 
     def connect(self):
         try:
-            with self.__connection.cursor() as cursor:
+            with self._connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception:
-            self.__connection = psycopg2.connect(self.__database_url)
+            self._connection = psycopg2.connect(self.__database_url)
 
     def create_table(self):
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"CREATE TABLE IF NOT EXISTS {self.__table_name}"
+                f"CREATE TABLE IF NOT EXISTS {self._table_name}"
                 """ (id SERIAL PRIMARY KEY,
                     firstname varchar(20),
                     lastname varchar(20),
@@ -52,14 +52,14 @@ class PostgresUserAdapter(UserDataAdapter):
             self.connection.commit()
 
     def get_user_from_row(self, row):
-        user_id = row[self.columns.index("id")]
-        firstname = row[self.columns.index("firstname")]
-        lastname = row[self.columns.index("lastname")]
-        middlename = row[self.columns.index("middlename")]
-        displayname = row[self.columns.index("displayname")]
-        telegram_id = row[self.columns.index("telegram_id")]
-        phone_number = row[self.columns.index("phone_number")]
-        is_admin = row[self.columns.index("is_admin")]
+        user_id = row[self._columns.index("id")]
+        firstname = row[self._columns.index("firstname")]
+        lastname = row[self._columns.index("lastname")]
+        middlename = row[self._columns.index("middlename")]
+        displayname = row[self._columns.index("displayname")]
+        telegram_id = row[self._columns.index("telegram_id")]
+        phone_number = row[self._columns.index("phone_number")]
+        is_admin = row[self._columns.index("is_admin")]
 
         return User(user_id=user_id, firstname=firstname, lastname=lastname,
                     middlename=middlename, displayname=displayname,
@@ -72,11 +72,11 @@ class PostgresUserAdapter(UserDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}")
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}")
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
                 yield self.get_user_from_row(row)
@@ -91,12 +91,12 @@ class PostgresUserAdapter(UserDataAdapter):
         Returns:
             A object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}"
                            " WHERE id = %s", [id])
 
-            self.__connection.commit()
+            self._connection.commit()
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -116,12 +116,12 @@ class PostgresUserAdapter(UserDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}"
                            " WHERE telegram_id = %s", [telegram_id])
 
-            self.__connection.commit()
+            self._connection.commit()
 
             rows = list(cursor)
             if len(rows) == 0:
@@ -137,12 +137,12 @@ class PostgresUserAdapter(UserDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}"
                            " WHERE is_admin")
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
                 yield self.get_user_from_row(row)
@@ -154,9 +154,9 @@ class PostgresUserAdapter(UserDataAdapter):
             reserve:
                 An instance of entity wake class.
         """
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"  INSERT INTO {self.__table_name}("
+                f"  INSERT INTO {self._table_name}("
                 """     telegram_id, firstname, lastname, middlename,
                         displayname, phone_number, is_admin)
                     VALUES(%s, %s, %s, %s, %s, %s, %s)
@@ -174,7 +174,7 @@ class PostgresUserAdapter(UserDataAdapter):
             result = user.__deepcopy__()
             result.user_id = cursor.fetchone()[0]
 
-            self.__connection.commit()
+            self._connection.commit()
 
             return result
 
@@ -185,9 +185,9 @@ class PostgresUserAdapter(UserDataAdapter):
             reserve:
                 An instance of entity wake class.
         """
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"  UPDATE {self.__table_name} SET "
+                f"  UPDATE {self._table_name} SET "
                 """     firstname = %s, lastname = %s, middlename = %s,
                         displayname = %s, phone_number = %s,
                         telegram_id = %s, is_admin = %s
@@ -203,7 +203,7 @@ class PostgresUserAdapter(UserDataAdapter):
                     user.user_id
                 ))
 
-            self.__connection.commit()
+            self._connection.commit()
 
     def remove_data_by_keys(self, id: int):
         """Remove data from storage by a keys
@@ -215,8 +215,8 @@ class PostgresUserAdapter(UserDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
+                f"DELETE FROM {self._table_name} WHERE id = %s", [id])
 
-            self.__connection.commit()
+            self._connection.commit()

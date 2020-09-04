@@ -13,7 +13,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         connection:
             A PostgreSQL connection instance.
     """
-    columns = (
+    _columns = (
         "id", "firstname", "lastname", "middlename", "displayname",
         "telegram_id", "phone_number", "start_time", "end_time",
         "set_type_id", "set_count", "board", "hydro",
@@ -22,29 +22,29 @@ class PostgressWakeAdapter(ReserveDataAdapter):
     def __init__(self,
                  connection=None, database_url=None,
                  table_name="wake_reserves"):
-        self.__connection = connection
+        self._connection = connection
         self.__database_url = database_url
-        self.__table_name = table_name
+        self._table_name = table_name
 
         self.connect()
         self.create_table()
 
     @property
     def connection(self):
-        return self.__connection
+        return self._connection
 
     def connect(self):
         try:
-            with self.__connection.cursor() as cursor:
+            with self._connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception:
-            self.__connection = psycopg2.connect(self.__database_url)
+            self._connection = psycopg2.connect(self.__database_url)
 
     def create_table(self):
 
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"CREATE TABLE IF NOT EXISTS {self.__table_name}"
+                f"CREATE TABLE IF NOT EXISTS {self._table_name}"
                 """ (
                     id SERIAL PRIMARY KEY,
                     telegram_id integer,
@@ -61,25 +61,27 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     canceled boolean DEFAULT false,
                     cancel_telegram_id integer)""")
 
-        self.__connection.commit()
+        self._connection.commit()
 
     def get_wake_from_row(self, row):
-        wake_id = row[self.columns.index("id")]
-        user = User(row[self.columns.index("firstname")])
-        user.lastname = row[self.columns.index("lastname")]
-        user.middlename = row[self.columns.index("middlename")]
-        user.displayname = row[self.columns.index("displayname")]
-        user.telegram_id = row[self.columns.index("telegram_id")]
-        start = row[self.columns.index("start_time")]
-        set_type_id = row[self.columns.index("set_type_id")]
-        set_count = row[self.columns.index("set_count")]
-        board = row[self.columns.index("board")]
-        hydro = row[self.columns.index("hydro")]
+        wake_id = row[self._columns.index("id")]
+        user = User(row[self._columns.index("firstname")])
+        user.lastname = row[self._columns.index("lastname")]
+        user.middlename = row[self._columns.index("middlename")]
+        user.displayname = row[self._columns.index("displayname")]
+        user.telegram_id = row[self._columns.index("telegram_id")]
+        user.phone_number = row[self._columns.index("phone_number")]
+        start = row[self._columns.index("start_time")]
+        set_type_id = row[self._columns.index("set_type_id")]
+        set_count = row[self._columns.index("set_count")]
+        board = row[self._columns.index("board")]
+        hydro = row[self._columns.index("hydro")]
+        canceled = row[self._columns.index("canceled")]
 
         return Wake(id=wake_id, user=user,
                     start_date=start.date(), start_time=start.time(),
                     set_type_id=set_type_id, set_count=set_count,
-                    board=board, hydro=hydro)
+                    board=board, hydro=hydro, canceled=canceled)
 
     def get_data(self) -> iter:
         """Get a full set of data from storage
@@ -87,11 +89,11 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}")
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}")
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
                 yield self.get_wake_from_row(row)
@@ -102,13 +104,13 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}"
                            " WHERE NOT canceled AND start_time >= %s"
                            " ORDER BY start_time", [datetime.today()])
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
                 yield self.get_wake_from_row(row)
@@ -123,9 +125,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}"
                            " WHERE id = %s", [id])
 
             rows = list(cursor)
@@ -134,7 +136,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
 
             row = rows[0]
 
-            self.__connection.commit()
+            self._connection.commit()
 
             return self.get_wake_from_row(row)
 
@@ -147,9 +149,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         start_ts = reserve.start
         end_ts = reserve.end
 
-        with self.__connection.cursor() as cursor:
-            columns_str = ", ".join(self.columns)
-            cursor.execute(f"SELECT {columns_str} FROM {self.__table_name}"
+        with self._connection.cursor() as cursor:
+            columns_str = ", ".join(self._columns)
+            cursor.execute(f"SELECT {columns_str} FROM {self._table_name}"
                            " WHERE NOT canceled"
                            "       and ((%s = start_time)"
                            "       or (%s < start_time and %s > start_time)"
@@ -157,7 +159,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                            " ORDER BY start_time",
                            (start_ts, start_ts, end_ts, start_ts, start_ts))
 
-            self.__connection.commit()
+            self._connection.commit()
 
             for row in cursor:
                 yield self.get_wake_from_row(row)
@@ -171,17 +173,17 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         start_ts = reserve.start
         end_ts = reserve.end
 
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
                 "   SELECT SUM(count) AS concurrent_count"
-                f"  FROM {self.__table_name}"
+                f"  FROM {self._table_name}"
                 """ WHERE NOT canceled
                         and ((%s = start_time)
                         or (%s < start_time and %s > start_time)
                         or (%s > start_time and %s < end_time))""",
                 (start_ts, start_ts, end_ts, start_ts, start_ts))
 
-            self.__connection.commit()
+            self._connection.commit()
 
             if cursor:
                 row = list(cursor)
@@ -197,9 +199,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             reserve:
                 An instance of entity wake class.
         """
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"  INSERT INTO {self.__table_name} ("
+                f"  INSERT INTO {self._table_name} ("
                 """     telegram_id, firstname, lastname,
                         middlename, displayname, phone_number,
                         start_time, end_time, set_type_id, set_count,
@@ -225,7 +227,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             result = reserve.__deepcopy__()
             result.id = cursor.fetchone()[0]
 
-            self.__connection.commit()
+            self._connection.commit()
 
             return result
 
@@ -236,9 +238,9 @@ class PostgressWakeAdapter(ReserveDataAdapter):
             reserve:
                 An instance of entity wake class.
         """
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"  UPDATE {self.__table_name} SET"
+                f"  UPDATE {self._table_name} SET"
                 """     firstname = %s, lastname = %s, middlename = %s,
                         displayname = %s, phone_number = %s, telegram_id = %s,
                         start_time = %s, end_time = %s, set_type_id = %s,
@@ -261,7 +263,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
                     reserve.canceled,
                     reserve.cancel_telegram_id,
                     reserve.id))
-            self.__connection.commit()
+            self._connection.commit()
 
     def remove_data_by_keys(self, id: int):
         """Remove data from storage by a keys
@@ -273,7 +275,7 @@ class PostgressWakeAdapter(ReserveDataAdapter):
         Returns:
             A iterator object of given data
         """
-        with self.__connection.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             cursor.execute(
-                f"DELETE FROM {self.__table_name} WHERE id = %s", [id])
-            self.__connection.commit()
+                f"DELETE FROM {self._table_name} WHERE id = %s", [id])
+            self._connection.commit()

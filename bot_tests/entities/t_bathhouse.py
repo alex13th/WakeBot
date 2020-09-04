@@ -11,7 +11,7 @@ class BathhouseTestCase(BaseTestCase):
         self.user = User("Firstname", phone_number="+777")
         self.start_date = date.today()
         self.start_time = time(10, 0, 0)
-        self.minutes = 30  # продолжительность
+        self.minutes = 60  # продолжительность
         self.set_count = 1
         self.reserve = Bathhouse(self.user, self.start_date, self.start_time,
                                  set_count=1, count=2)
@@ -62,7 +62,7 @@ class BathhouseTestCase(BaseTestCase):
 
         # Сохраняет продолжительность
         start_reserve = datetime.combine(date.today(), time(15, 0, 0))
-        end_reserve = datetime.combine(date.today(), time(15, minutes, 0))
+        end_reserve = datetime.combine(date.today(), time(16, 0, 0))
         reserve.start = start_reserve
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
@@ -75,7 +75,7 @@ class BathhouseTestCase(BaseTestCase):
 
         # Сохраняет продолжительность
         start_reserve = datetime.combine(date.today(), time(18, 0, 0))
-        end_reserve = datetime.combine(date.today(), time(18, minutes, 0))
+        end_reserve = datetime.combine(date.today(), time(19, 0, 0))
         reserve.start = start_reserve
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
@@ -87,9 +87,9 @@ class BathhouseTestCase(BaseTestCase):
         user = self.user
 
         # Изменяет окончание
-        minutes = 120
+        minutes = 240
         start_reserve = start
-        end_reserve = start + timedelta(minutes=120)
+        end_reserve = start + timedelta(minutes=240)
         reserve.set_count = 4
 
         self.check_reserve(reserve, start_reserve, end_reserve, minutes, user)
