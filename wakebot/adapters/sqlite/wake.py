@@ -1,6 +1,8 @@
-from sqlite3 import Connection
+from copy import deepcopy
 from datetime import datetime
+from sqlite3 import Connection
 from typing import Union
+
 from ..data import ReserveDataAdapter
 from ...entities.wake import Wake
 from ...entities.user import User
@@ -195,7 +197,7 @@ class SqliteWakeAdapter(ReserveDataAdapter):
             ))
         self._connection.commit()
 
-        result = reserve.__deepcopy__()
+        result = deepcopy(reserve)
         result.id = cursor.lastrowid
 
         return result

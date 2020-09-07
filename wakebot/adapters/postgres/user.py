@@ -1,5 +1,8 @@
 import psycopg2
+
+from copy import deepcopy
 from typing import Union
+
 from ..data import UserDataAdapter
 from ...entities.user import User
 
@@ -171,7 +174,7 @@ class PostgresUserAdapter(UserDataAdapter):
                     user.is_admin)
             )
 
-            result = user.__deepcopy__()
+            result = deepcopy(user)
             result.user_id = cursor.fetchone()[0]
 
             self._connection.commit()

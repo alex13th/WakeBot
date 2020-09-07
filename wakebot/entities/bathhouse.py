@@ -86,27 +86,21 @@ class Bathhouse(Reserve):
 
     @property
     def is_complete(self) -> bool:
-        return (self.start_date
-                and self.start_time
-                and self.minutes
-                and self.user)
+        return bool(self.start_date
+                    and self.start_time
+                    and self.minutes
+                    and self.user)
 
     def __copy__(self):
         return Bathhouse(self.user, self.start_date, self.start_time,
                          self.set_type.set_id, self.set_count,
                          self.count, self.id)
 
-    def __deepcopy__(self):
-        return Bathhouse(self.user.__deepcopy__(),
-                         self.start_date, self.start_time,
-                         self.set_type.set_id, self.set_count,
-                         self.count, self.id)
-
     def __eq__(self, other) -> bool:
-        if (self.start_date == other.start_date
-           and self.set_count == other.set_count
-           and self.minutes == other.minutes
-           and self.count == other.count):
+        if (self.start == other.start
+                and self.set_count == other.set_count
+                and self.minutes == other.minutes
+                and self.count == other.count):
             return True
         else:
             return False

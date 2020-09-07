@@ -1,5 +1,7 @@
 import datetime
 import pytest
+
+from copy import deepcopy
 from wakebot.entities import Reserve, User
 
 
@@ -27,7 +29,6 @@ def test_reserve_default():
 
 @pytest.mark.reserve
 @pytest.mark.entities
-@pytest.mark.create
 def test_reserve_creation():
     """Create Reserve instance with default attributes."""
     user = User("Firstname")
@@ -56,7 +57,28 @@ def test_reserve_creation():
 
 @pytest.mark.reserve
 @pytest.mark.entities
-@pytest.mark.compare
+def test_reserve_copy():
+    """
+    Copy Reserve instances.
+    """
+    user = User("Firstname")
+    start = datetime.datetime.now()
+
+    reserve1 = Reserve(
+        user=user, start_date=start.date(), start_time=start.time(),
+        set_type_id="hour", set_count=2, id=4,
+        canceled=True, cancel_telegram_id=321)
+
+    reserve2 = deepcopy(reserve1)
+
+    assert reserve1 == reserve2
+
+    reserve2.set_count = 3
+    assert not (reserve1 == reserve2)
+
+
+@pytest.mark.reserve
+@pytest.mark.entities
 def test_reserve_comparation():
     """
     Compare Reserve instances.
@@ -69,26 +91,32 @@ def test_reserve_comparation():
         set_type_id="hour", set_count=2, count=3, id=4, canceled=True,
         cancel_telegram_id=321)
 
-    reserve2 = Reserve(
-        user=user, start_date=start.date(), start_time=start.time(),
-        set_type_id="hour", set_count=2, count=3, id=4, canceled=True,
-        cancel_telegram_id=321)
-
+    reserve2 = deepcopy(reserve1)
     assert reserve1 == reserve2
 
+    reserve2 = deepcopy(reserve1)
     reserve2.id = 4
     assert reserve1 == reserve2
 
+    reserve2 = deepcopy(reserve1)
     reserve2.canceled = False
     assert reserve1 == reserve2
 
-    reserve2.set_count = 1
+    reserve2 = deepcopy(reserve1)
+    reserve2.count = 2
+    assert not (reserve1 == reserve2)
+
+    reserve2 = deepcopy(reserve1)
+    reserve2.set_count = 3
+    assert not (reserve1 == reserve2)
+
+    reserve2 = deepcopy(reserve1)
+    reserve2.start = reserve2.start + datetime.timedelta(minutes=1)
     assert not (reserve1 == reserve2)
 
 
 @pytest.mark.reserve
 @pytest.mark.entities
-@pytest.mark.complete
 def test_reserve_complete():
     """
     Test Reservation complete attribute

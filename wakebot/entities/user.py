@@ -99,16 +99,13 @@ class User:
         if (not value) or re.match(self.phone_regex, value):
             self._phone_number = value
         else:
-            raise ValueError
+            self._phone_number = value
 
     def __copy__(self):
         return User(
             self.firstname, self.lastname, self.middlename,
             self._displayname, self.phone_number,
             self.telegram_id, self.user_id, is_admin=self.is_admin)
-
-    def __deepcopy__(self):
-        return self.__copy__()
 
     def __str__(self) -> str:
         """Provide built-in mapping to string"""
@@ -117,11 +114,11 @@ class User:
     def __eq__(self, other) -> bool:
         """ Compare all attributes exclude user_id """
         if (self.firstname == other.firstname
-           and self.lastname == other.lastname
-           and self.middlename == other.middlename
-           and self.displayname == other.displayname
-           and self.phone_number == other.phone_number
-           and self.telegram_id == other.telegram_id):
+                and self.lastname == other.lastname
+                and self.middlename == other.middlename
+                and self.displayname == other.displayname
+                and self.phone_number == other.phone_number
+                and self.telegram_id == other.telegram_id):
             return True
         else:
             return False

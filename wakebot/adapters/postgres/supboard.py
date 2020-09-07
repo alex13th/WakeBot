@@ -1,6 +1,9 @@
 import psycopg2
+
+from copy import deepcopy
 from datetime import datetime
 from typing import Union
+
 from ..data import ReserveDataAdapter
 from ...entities import Supboard, User
 
@@ -215,7 +218,7 @@ class PostgressSupboardAdapter(ReserveDataAdapter):
                     reserve.canceled
                 ))
 
-            result = reserve.__deepcopy__()
+            result = deepcopy(reserve)
             result.id = cursor.fetchone()[0]
 
             self._connection.commit()

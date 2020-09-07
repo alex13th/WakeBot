@@ -211,21 +211,18 @@ class Reserve:
 
     def __eq__(self, other) -> bool:
         """Provide built-in comparation to other reserve instance"""
-        if (self.start_date == other.start_date
-           and self.set_count == other.set_count
-           and self.minutes == other.minutes):
+        if (self.start == other.start
+                and self.count == other.count
+                and self.set_count == other.set_count
+                and self.minutes == other.minutes):
             return True
         else:
             return False
 
-    def __copy__(self):
+    def __copy__(self, other):
         return Reserve(self.user, self.start_date, self.start_time,
-                       self.set_type.set_id, self.set_count, self.id)
-
-    def __deepcopy__(self):
-        return Reserve(self.user.__deepcopy__(),
-                       self.start_date, self.start_time,
-                       self.set_type.set_id, self.set_count, self.id)
+                       self.set_type.set_id, self.set_count, self.count,
+                       self.id)
 
 
 if __name__ == "__main__":

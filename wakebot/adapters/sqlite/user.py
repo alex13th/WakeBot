@@ -1,5 +1,7 @@
+from copy import deepcopy
 from sqlite3 import Connection
 from typing import Union
+
 from ..data import UserDataAdapter
 from ...entities.user import User
 
@@ -149,7 +151,7 @@ class SqliteUserAdapter(UserDataAdapter):
         )
         self._connection.commit()
 
-        result = user.__deepcopy__()
+        result = deepcopy(user)
         result.user_id = cursor.lastrowid
         cursor.close()
 

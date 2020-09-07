@@ -45,6 +45,7 @@ class Wake(Reserve):
                  start_time: Optional[time] = None,
                  set_type_id: str = "set",
                  set_count: int = 1,
+                 count: int = 1,
                  id: Union[int, None] = None,
                  board: Optional[int] = 0,
                  hydro: Optional[int] = 0,
@@ -79,7 +80,8 @@ class Wake(Reserve):
         """
         super().__init__(user=user,
                          start_date=start_date, start_time=start_time,
-                         set_type_id=set_type_id, set_count=set_count, id=id,
+                         set_type_id=set_type_id, set_count=set_count,
+                         count=count, id=id,
                          canceled=canceled,
                          cancel_telegram_id=cancel_telegram_id)
 
@@ -93,21 +95,17 @@ class Wake(Reserve):
 
     def __copy__(self):
         return Wake(self.user, self.start_date, self.start_time,
-                    self.set_type.set_id, self.set_count, self.id,
-                    self.board, self.hydro)
-
-    def __deepcopy__(self):
-        return Wake(self.user.__deepcopy__(),
-                    self.start_date, self.start_time,
-                    self.set_type.set_id, self.set_count, self.id,
+                    self.set_type.set_id, self.set_count,
+                    self.count, self.id,
                     self.board, self.hydro)
 
     def __eq__(self, other) -> bool:
-        if (self.start_date == other.start_date
-           and self.set_count == other.set_count
-           and self.minutes == other.minutes
-           and self.board == other.board
-           and self.hydro == other.hydro):
+        if (self.start == other.start
+                and self.count == other.count
+                and self.set_count == other.set_count
+                and self.minutes == other.minutes
+                and self.board == other.board
+                and self.hydro == other.hydro):
             return True
         else:
             return False

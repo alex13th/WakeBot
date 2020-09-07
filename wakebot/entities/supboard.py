@@ -89,17 +89,11 @@ class Supboard(Reserve):
                         self.set_type.set_id, self.set_count,
                         self.count, self.id)
 
-    def __deepcopy__(self):
-        return Supboard(self.user.__deepcopy__(),
-                        self.start_date, self.start_time,
-                        self.set_type.set_id, self.set_count,
-                        self.count, self.id)
-
     def __eq__(self, other) -> bool:
-        if (self.start_date == other.start_date
-           and self.set_count == other.set_count
-           and self.minutes == other.minutes
-           and self.count == other.count):
+        if (self.start == other.start
+                and self.set_count == other.set_count
+                and self.minutes == other.minutes
+                and self.count == other.count):
             return True
         else:
             return False
