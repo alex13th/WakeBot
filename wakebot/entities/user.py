@@ -26,14 +26,8 @@ class User:
             A boolean flag of user admin role.
     """
 
-    firstname: str
-    lastname: Optional[str]
-    middlename: Optional[str]
-    _displayname: Optional[str]
-    _phone_number: Optional[str]
-    telegram_id: Optional[int]
-    user_id: Optional[int]
-    is_admin: Optional[bool]
+    __slots__ = ["firstname", "lastname", "middlename", "_displayname",
+                 "_phone_number", "telegram_id", "user_id", "is_admin"]
     phone_regex = "^\\+[7]\\s?[-\\(]?\\d{3}\\)?[- ]?\\d{3}-?\\d{2}-?\\d{2}$"
 
     def __init__(self,
@@ -122,3 +116,10 @@ class User:
             return True
         else:
             return False
+
+    def __repr__(self) -> str:
+        """Provide built-in mapping to represantation string"""
+        return (f"User(displayname={self.displayname!r}, "
+                f"telegram_id={self.telegram_id!r}, "
+                f"phone_number={self.phone_number!r}, "
+                f"user_id={self.user_id})")

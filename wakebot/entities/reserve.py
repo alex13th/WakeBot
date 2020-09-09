@@ -7,9 +7,12 @@ from .user import User
 class ReserveSetType():
     """Reservation set type class defines reservation time duration"""
 
-    def __init__(self, set_id="minute", minutes=1):
+    __slots__ = ["set_id", "minutes", "name"]
+
+    def __init__(self, set_id="minute", minutes=1, name=None):
         self.set_id = set_id
         self.minutes = minutes
+        self.name = name if name else set_id
 
 
 class Reserve:
@@ -46,14 +49,8 @@ class Reserve:
             An integer telegram identifier of user canceled a reserevation
     """
 
-    user: Optional[User]
-    start_date: Optional[date]
-    start_time: Optional[time]
-    set_type: Union[ReserveSetType, None]
-    set_count: int
-    count: int
-    canceled: bool
-    cancel_telegram_id: int
+    __slots__ = ["id", "user", "start_date", "start_time", "set_type",
+                 "set_count", "count", "canceled", "cancel_telegram_id"]
 
     def __init__(self,
                  user: Optional[User] = None,
@@ -92,9 +89,9 @@ class Reserve:
         else:
             self.set_type = ReserveSetType(set_type_id, 5)
 
-        self.__user = user
-        self.__start_date = start_date if start_date else date.today()
-        self.__start_time = start_time
+        self.user = user
+        self.start_date = start_date if start_date else date.today()
+        self.start_time = start_time
         self.set_count = set_count
         self.count = count
         self.id = id
@@ -103,56 +100,28 @@ class Reserve:
 
     @property
     def is_complete(self) -> bool:
-        return bool(self.__start_date
-                    and self.__start_time
+        return bool(self.start_date
+                    and self.start_time
                     and self.minutes
                     and self.user and self.user.phone_number)
 
     @property
-    def user(self) -> Optional[User]:
-        return self.__user
-
-    @user.setter
-    def user(self, value: Optional[User]):
-        self.__user = value
-
-    @property
     def start(self) -> Optional[datetime]:
-        if not (self.__start_date and self.__start_time):
+        if not (self.start_date and self.start_time):
             return None
 
-        return datetime.combine(self.__start_date, self.__start_time)
+        return datetime.combine(self.start_date, self.start_time)
 
     @start.setter
     def start(self, value: Optional[datetime]):
-        self.__start_date = value.date()
-        self.__start_time = value.time()
-
-    @property
-    def start_date(self) -> Optional[date]:
-        return self.__start_date
-
-    @start_date.setter
-    def start_date(self, value: Optional[date]):
-        self.__start_date = value
-
-    @property
-    def start_time(self) -> Optional[time]:
-        return self.__start_time
-
-    @start_time.setter
-    def start_time(self, value: Optional[time]):
-        self.__start_time = value
-
-    @property
-    def minutes(self) -> int:
-        return self.set_type.minutes * self.set_count
+        self.start_date = value.date()
+        self.start_time = value.time()
 
     @property
     def end(self) -> Optional[datetime]:
         result = None
-        if self.__start_date and self.__start_time and self.minutes:
-            result = datetime.combine(self.__start_date, self.__start_time)
+        if self.start_date and self.start_time and self.minutes:
+            result = datetime.combine(self.start_date, self.start_time)
             result += timedelta(minutes=self.minutes)
 
         return result
@@ -160,8 +129,8 @@ class Reserve:
     @property
     def end_date(self) -> Optional[date]:
         result = None
-        if self.__start_date and self.__start_time and self.minutes:
-            result = datetime.combine(self.__start_date, self.__start_time)
+        if self.start_date and self.start_time and self.minutes:
+            result = datetime.combine(self.start_date, self.start_time)
             result += timedelta(minutes=self.minutes)
             result = result.date()
 
@@ -170,12 +139,16 @@ class Reserve:
     @property
     def end_time(self) -> Optional[time]:
         result = None
-        if self.__start_date and self.__start_time and self.minutes:
-            result = datetime.combine(self.__start_date, self.__start_time)
+        if self.start_date and self.start_time and self.minutes:
+            result = datetime.combine(self.start_date, self.start_time)
             result += timedelta(minutes=self.minutes)
             result = result.time()
 
         return result
+
+    @property
+    def minutes(self) -> int:
+        return self.set_type.minutes * self.set_count
 
     def check_concurrent(self, other) -> int:
         """Check reservation time conflict
@@ -206,8 +179,15 @@ class Reserve:
                                           self.start_time,
                                           self.end_date,
                                           self.end_time)
-        else:
-            raise Exception
+
+    def __repr__(self) -> str:
+        """Provide built-in mapping to represantation string"""
+        return (f"Reservation(start_date={self.start_date!r}, "
+                f"start_time={self.start_time!r}, "
+                f"set_type={self.set_type.name!r}, "
+                f"set_count={self.set_count}, "
+                f"minutes={self.minutes}, "
+                f"is_complete={self.is_complete})")
 
     def __eq__(self, other) -> bool:
         """Provide built-in comparation to other reserve instance"""
@@ -223,8 +203,3 @@ class Reserve:
         return Reserve(self.user, self.start_date, self.start_time,
                        self.set_type.set_id, self.set_count, self.count,
                        self.id)
-
-
-if __name__ == "__main__":
-    reserve = Reserve(None, date.today(), time(), 30)
-    print(reserve)

@@ -54,6 +54,11 @@ def test_wake_creation():
     assert wake.is_complete is False
     assert wake.canceled is True
     assert wake.cancel_telegram_id == 321
+    assert wake.__repr__() == (
+        f"Wake(start_date={start.date()!r}, "
+        f"start_time={start.time()!r}, set_type='hour', "
+        f"set_count=2, minutes=120, board=4, hydro=5, "
+        f"is_complete=False)")
 
 
 @pytest.mark.wake

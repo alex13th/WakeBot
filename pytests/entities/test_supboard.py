@@ -53,7 +53,10 @@ def test_supboard_creation():
     assert supboard.is_complete is False
     assert supboard.canceled is True
     assert supboard.cancel_telegram_id == 321
-
+    assert supboard.__repr__() == (
+        f"Supboard(start_date={start.date()!r}, "
+        f"start_time={start.time()!r}, set_type='hour', "
+        f"set_count=2, minutes=120, count=3, is_complete=False)")
 
 @pytest.mark.supboard
 @pytest.mark.entities

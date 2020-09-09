@@ -53,7 +53,10 @@ def test_bathhouse_creation():
     assert bathhouse.is_complete is True  # Don't require a phone number
     assert bathhouse.canceled is True
     assert bathhouse.cancel_telegram_id == 321
-
+    assert bathhouse.__repr__() == (
+        f"Bathhouse(start_date={start.date()!r}, "
+        f"start_time={start.time()!r}, set_type='set', "
+        f"set_count=2, minutes=60, is_complete=True)")
 
 @pytest.mark.bathhouse
 @pytest.mark.entities

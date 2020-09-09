@@ -39,6 +39,8 @@ class Wake(Reserve):
             of user canceled a reserevation
     """
 
+    __slots__ = ["board", "hydro"]
+
     def __init__(self,
                  user: Optional[User] = None,
                  start_date: Optional[date] = None,
@@ -109,6 +111,17 @@ class Wake(Reserve):
             return True
         else:
             return False
+
+    def __repr__(self) -> str:
+        """Provide built-in mapping to represantation string"""
+        return (f"Wake(start_date={self.start_date!r}, "
+                f"start_time={self.start_time!r}, "
+                f"set_type={self.set_type.name!r}, "
+                f"set_count={self.set_count}, "
+                f"minutes={self.minutes}, "
+                f"board={self.board}, "
+                f"hydro={self.hydro}, "
+                f"is_complete={self.is_complete})")
 
 
 if __name__ == "__main__":

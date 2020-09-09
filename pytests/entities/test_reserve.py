@@ -39,6 +39,7 @@ def test_reserve_creation():
         user=user, start_date=start.date(), start_time=start.time(),
         set_type_id="hour", set_count=2, count=3, id=4, canceled=True,
         cancel_telegram_id=321)
+
     assert reserve.id == 4
     assert reserve.user == user
     assert reserve.start_date == start.date()
@@ -53,7 +54,10 @@ def test_reserve_creation():
     assert reserve.is_complete is False
     assert reserve.canceled is True
     assert reserve.cancel_telegram_id == 321
-
+    assert reserve.__repr__() == (
+        f"Reservation(start_date={start.date()!r}, "
+        f"start_time={start.time()!r}, set_type='hour', "
+        f"set_count=2, minutes=120, is_complete=False)")
 
 @pytest.mark.reserve
 @pytest.mark.entities
