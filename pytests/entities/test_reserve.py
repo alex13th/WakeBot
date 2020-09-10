@@ -59,6 +59,7 @@ def test_reserve_creation():
         f"start_time={start.time()!r}, set_type='hour', "
         f"set_count=2, minutes=120, is_complete=False)")
 
+
 @pytest.mark.reserve
 @pytest.mark.entities
 def test_reserve_copy():
