@@ -1,11 +1,7 @@
-import pytest
-
 from copy import deepcopy
 from wakebot.entities import User
 
 
-@pytest.mark.user
-@pytest.mark.entities
 def test_user_default():
     """Create User instance with default attributes."""
     user = User("Firstname")
@@ -19,8 +15,6 @@ def test_user_default():
     assert user.is_admin is False
 
 
-@pytest.mark.user
-@pytest.mark.entities
 def test_user_creation():
     """Create User instance with attributes."""
     user = User(
@@ -42,8 +36,6 @@ def test_user_creation():
         "user_id=1)")
 
 
-@pytest.mark.user
-@pytest.mark.entities
 def test_user_comparation():
     """
     Compare User instances.

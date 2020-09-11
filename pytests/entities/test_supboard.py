@@ -1,13 +1,9 @@
 import datetime
-import pytest
 
 from copy import deepcopy
 from wakebot.entities import Supboard, User
 
 
-@pytest.mark.supboard
-@pytest.mark.entities
-@pytest.mark.default
 def test_supboard_default():
     """Create Supboard instance with default attributes."""
     supboard = Supboard()
@@ -27,8 +23,6 @@ def test_supboard_default():
     assert supboard.cancel_telegram_id is None
 
 
-@pytest.mark.supboard
-@pytest.mark.entities
 def test_supboard_creation():
     """Create Supboard instance with default attributes."""
     user = User("Firstname")
@@ -58,8 +52,7 @@ def test_supboard_creation():
         f"start_time={start.time()!r}, set_type='hour', "
         f"set_count=2, minutes=120, count=3, is_complete=False)")
 
-@pytest.mark.supboard
-@pytest.mark.entities
+
 def test_supboard_copy():
     """
     Copy Supboard instances.
@@ -80,8 +73,6 @@ def test_supboard_copy():
     assert not (supboard1 == supboard2)
 
 
-@pytest.mark.supboard
-@pytest.mark.entities
 def test_supboard_comparation():
     """
     Compare Supboard instances.
@@ -118,8 +109,6 @@ def test_supboard_comparation():
     assert not (supboard1 == supboard2)
 
 
-@pytest.mark.supboard
-@pytest.mark.entities
 def test_supboard_complete():
     """
     Test Reservation complete attribute

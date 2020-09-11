@@ -1,13 +1,9 @@
 import datetime
-import pytest
 
 from copy import deepcopy
 from wakebot.entities import Reserve, User
 
 
-@pytest.mark.reserve
-@pytest.mark.entities
-@pytest.mark.default
 def test_reserve_default():
     """Create Reserve instance with default attributes."""
     reserve = Reserve()
@@ -27,8 +23,6 @@ def test_reserve_default():
     assert reserve.cancel_telegram_id is None
 
 
-@pytest.mark.reserve
-@pytest.mark.entities
 def test_reserve_creation():
     """Create Reserve instance with default attributes."""
     user = User("Firstname")
@@ -60,8 +54,6 @@ def test_reserve_creation():
         f"set_count=2, minutes=120, is_complete=False)")
 
 
-@pytest.mark.reserve
-@pytest.mark.entities
 def test_reserve_copy():
     """
     Copy Reserve instances.
@@ -82,8 +74,6 @@ def test_reserve_copy():
     assert not (reserve1 == reserve2)
 
 
-@pytest.mark.reserve
-@pytest.mark.entities
 def test_reserve_comparation():
     """
     Compare Reserve instances.
@@ -120,8 +110,6 @@ def test_reserve_comparation():
     assert not (reserve1 == reserve2)
 
 
-@pytest.mark.reserve
-@pytest.mark.entities
 def test_reserve_complete():
     """
     Test Reservation complete attribute

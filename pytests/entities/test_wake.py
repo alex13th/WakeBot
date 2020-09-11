@@ -1,12 +1,9 @@
 import datetime
-import pytest
 
 from copy import deepcopy
 from wakebot.entities import Wake, User
 
 
-@pytest.mark.wake
-@pytest.mark.entities
 def test_wake_default():
     """Create Wake instance with default attributes."""
     wake = Wake()
@@ -26,8 +23,6 @@ def test_wake_default():
     assert wake.cancel_telegram_id is None
 
 
-@pytest.mark.wake
-@pytest.mark.entities
 def test_wake_creation():
     """Create Wake instance with default attributes."""
     user = User("Firstname")
@@ -61,8 +56,6 @@ def test_wake_creation():
         f"is_complete=False)")
 
 
-@pytest.mark.wake
-@pytest.mark.entities
 def test_wake_comparation():
     """
     Compare Wake instances.
@@ -107,8 +100,6 @@ def test_wake_comparation():
     assert not (wake1 == wake2)
 
 
-@pytest.mark.wake
-@pytest.mark.entities
 def test_wake_copy():
     """
     Copy Wake instances.
@@ -129,8 +120,6 @@ def test_wake_copy():
     assert not (wake1 == wake2)
 
 
-@pytest.mark.wake
-@pytest.mark.entities
 def test_wake_complete():
     """
     Test Reservation complete attribute

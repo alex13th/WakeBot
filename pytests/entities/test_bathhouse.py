@@ -1,13 +1,9 @@
 import datetime
-import pytest
 
 from copy import deepcopy
 from wakebot.entities import Bathhouse, User
 
 
-@pytest.mark.bathhouse
-@pytest.mark.entities
-@pytest.mark.default
 def test_bathhouse_default():
     """Create Bathhouse instance with default attributes."""
     bathhouse = Bathhouse()
@@ -27,8 +23,6 @@ def test_bathhouse_default():
     assert bathhouse.cancel_telegram_id is None
 
 
-@pytest.mark.bathhouse
-@pytest.mark.entities
 def test_bathhouse_creation():
     """Create Bathhouse instance with default attributes."""
     user = User("Firstname")
@@ -58,8 +52,7 @@ def test_bathhouse_creation():
         f"start_time={start.time()!r}, set_type='set', "
         f"set_count=2, minutes=60, is_complete=True)")
 
-@pytest.mark.bathhouse
-@pytest.mark.entities
+
 def test_bathhouse_copy():
     """
     Copy Bathhouse instances.
@@ -80,8 +73,6 @@ def test_bathhouse_copy():
     assert not (bathhouse1 == bathhouse2)
 
 
-@pytest.mark.bathhouse
-@pytest.mark.entities
 def test_bathhouse_comparation():
     """
     Compare Bathhouse instances.
@@ -118,8 +109,6 @@ def test_bathhouse_comparation():
     assert not (bathhouse1 == bathhouse2)
 
 
-@pytest.mark.bathhouse
-@pytest.mark.entities
 def test_bathhouse_complete():
     """
     Test Reservation complete attribute
