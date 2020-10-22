@@ -1,7 +1,7 @@
 from aiogram.types import ParseMode
 
 
-class ReserveTelegramStrings:
+class ReserveTelegramStringsRu:
     icon_stop = "⛔️"
     icon_cancel = "❌"
     icon_phone = "📞"

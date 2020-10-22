@@ -3,7 +3,7 @@ import pytest
 from datetime import date, time
 from wakebot.entities import Reserve, User
 from wakebot.views import ReserveTelegramView
-from wakebot.views import ReserveTelegramStrings, ReserveTelegramStringsEng
+from wakebot.views import ReserveTelegramStringsRu
 
 
 @pytest.fixture
@@ -19,23 +19,19 @@ def reserve():
 
     return reserve
 
-def test_default():
-    """Create Reserve view instance with default attributes."""
-    reserve_view = ReserveTelegramView()
-    assert reserve_view.strings == ReserveTelegramStrings
-
 
 def test_creation():
     """Create Reserve view instance with specified strings"""
-    reserve_view = ReserveTelegramView(ReserveTelegramStringsEng)
-    assert reserve_view.strings == ReserveTelegramStringsEng
+    reserve_view = ReserveTelegramView(ReserveTelegramStringsRu)
+    assert reserve_view.strings == ReserveTelegramStringsRu
 
 
 def test_create_hello_text():
     """Create reservation main menu message"""
-    reserve_view = ReserveTelegramView(ReserveTelegramStrings)
+    expected_text = "Главное меню сервиса бронирований"
+    reserve_view = ReserveTelegramView(ReserveTelegramStringsRu)
     assert (reserve_view.create_hello_text() ==
-            "Главное меню сервиса бронирований")
+            expected_text)
 
 
 def test_get_reservation_info_without_contact(reserve):
@@ -43,15 +39,17 @@ def test_get_reservation_info_without_contact(reserve):
     get_reservation_info(<reservation>) method must return
     reservation information without contact data
     """
-    reserve_view = ReserveTelegramView(ReserveTelegramStrings)
+    reserve_view = ReserveTelegramView(ReserveTelegramStringsRu)
 
-    expected_text = """*Услуга:* Бронирование
-*Дата:* 16.07.2020
-*Время начала:* 17:20
-*Время окончания:* 19:20
-*Сет:* Час (2)
-*Количество:* 1
-"""
+    expected_text = (
+        "*Услуга:* Бронирование\n"
+        "*Дата:* 16.07.2020\n"
+        "*Время начала:* 17:20\n"
+        "*Время окончания:* 19:20\n"
+        "*Сет:* Час (2)\n"
+        "*Количество:* 1"
+    )
+
     actual_text = reserve_view.create_booking_info(reserve=reserve)
     assert actual_text == expected_text
 
@@ -61,7 +59,7 @@ def test_get_reservation_info_full(reserve):
     get_reservation_info(<reservation>, True) method must return
     full reservation information (with contact data)
     """
-    reserve_view = ReserveTelegramView(ReserveTelegramStrings)
+    reserve_view = ReserveTelegramView(ReserveTelegramStringsRu)
     expected_text = """*Услуга:* Бронирование
 *Дата:* 16.07.2020
 *Время начала:* 17:20

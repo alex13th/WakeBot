@@ -1,7 +1,7 @@
-from typing import Optional, Iterator
+from typing import Iterator, Union
 
-from ..entities import Reserve
-from .strings import ReserveTelegramStrings
+from ...entities import Reserve
+from .const.reserve import DefaultConfig
 
 
 class ReserveTelegramView:
@@ -12,16 +12,16 @@ class ReserveTelegramView:
             A local stings class.
     """
 
-    __slots__ = ["strings"]
+    config: DefaultConfig
 
-    def __init__(self, strings: Optional[ReserveTelegramStrings] = None):
+    def __init__(self, config: Union[DefaultConfig, None]):
         """Reservation telegram message generator
 
         Args:
         strings:
             A local stings class.
         """
-        self.strings = strings if strings else ReserveTelegramStrings
+        self.config = config if config else DefaultConfig
 
     def create_booking_info(self,
                             reserve: Reserve,
@@ -36,17 +36,17 @@ class ReserveTelegramView:
             A message text.
         """
 
-        result = (f"{self.strings.service_label} "
-                  f"{self.strings.service_type_text}\n")
+        result = (f"{self.config.service.label} "
+                  f"{self.config.service.type_name}\n")
 
         if reserve.user and show_contact:
-            result += f"{self.strings.name_label} {reserve.user.displayname}\n"
+            result += f"{self.config.user.label} {reserve.user.displayname}\n"
             if reserve.user.phone_number:
-                result += (f"{self.strings.phone_label} "
+                result += (f"{self.config.phone.label} "
                            f"{reserve.user.phone_number}\n")
 
-        result += (f"{self.strings.date_label} "
-                   f"{reserve.start_date.strftime(self.strings.date_format)}"
+        result += (f"{self.config.date.label} "
+                   f"{reserve.start_date.strftime(self.config.date.template)}"
                    "\n")
 
         if reserve.start_time:
@@ -62,7 +62,7 @@ class ReserveTelegramView:
                    f" ({reserve.set_count})\n")
 
         result += (f"{self.strings.count_label} "
-                   f"{reserve.count}\n")
+                   f"{reserve.count}")
 
         return result
 
