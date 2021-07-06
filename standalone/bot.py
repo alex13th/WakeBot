@@ -47,7 +47,7 @@ sup_processor = SupboardProcessor(dp,
                                   strings=SupboardStrings,
                                   data_adapter=sup_adapter,
                                   user_data_adapter=user_adapter)
-sup_processor.max_count = 6
+sup_processor.max_count = 10
 sup_processor.logger_id = 586350636
 
 if __name__ == "__main__":
