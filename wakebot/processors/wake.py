@@ -70,6 +70,8 @@ class WakeProcessor(ReserveProcessor):
 
         self.book_handlers["board"] = self.book_board
         self.book_handlers["hydro"] = self.book_hydro
+        self.board_count = 3
+        self.hydro_count = 3
 
     async def cmd_wake(self, message: Message):
         """Proceed /wake command"""
@@ -148,7 +150,8 @@ class WakeProcessor(ReserveProcessor):
         """
         reserve: Wake = self.state_manager.data
         text = self.create_book_text(reserve, show_contact=True)
-        reply_markup = self.create_count_keyboard(start=0, count=3)
+        reply_markup = self.create_count_keyboard(start=0,
+                                                  count=self.board_count)
         state = "board"
         answer = self.strings.board_button_callback
 
@@ -196,7 +199,8 @@ class WakeProcessor(ReserveProcessor):
         """
         reserve: Wake = self.state_manager.data
         text = self.create_book_text(reserve, show_contact=True)
-        reply_markup = self.create_count_keyboard(start=0, count=3)
+        reply_markup = self.create_count_keyboard(start=0,
+                                                  count=self.hydro_count)
         state = "hydro"
         answer = self.strings.hydro_button_callback
 

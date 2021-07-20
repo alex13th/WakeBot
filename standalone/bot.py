@@ -17,7 +17,10 @@ from wakebot.adapters.postgres import PostgresUserAdapter
 from config import DefaultStrings, WakeStrings, SupboardStrings
 
 TOKEN = os.environ["TOKEN"]
-DATABASE_URL = os.environ["DATABASE_URL"]
+DATABASE_URL = os.environ.get("DATABASE_URL")
+board_count = os.environ.get("BOARD_COUNT")
+hydro_count = os.environ.get("HYDRO_COUNT")
+sup_count = os.environ.get("SUP_COUNT")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -39,6 +42,8 @@ wake_processor = WakeProcessor(dp,
                                data_adapter=wake_adapter,
                                user_data_adapter=user_adapter)
 wake_processor.logger_id = 586350636
+wake_processor.board_count = int(board_count) if board_count else 5
+wake_processor.hydro_count = int(hydro_count) if hydro_count else 10
 
 sup_adapter = PostgressSupboardAdapter(database_url=DATABASE_URL,
                                        table_name="wp38_supboard")
@@ -47,7 +52,7 @@ sup_processor = SupboardProcessor(dp,
                                   strings=SupboardStrings,
                                   data_adapter=sup_adapter,
                                   user_data_adapter=user_adapter)
-sup_processor.max_count = 10
+sup_processor.max_count = int(sup_count) if sup_count else 10
 sup_processor.logger_id = 586350636
 
 if __name__ == "__main__":
